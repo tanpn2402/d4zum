@@ -1,0 +1,132 @@
+version: '3'
+
+services:
+
+  # nginx
+  d4zum.nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    image: d4zum.nginx
+    container_name: d4zum.nginx
+    restart: unless-stopped
+    environment:
+      TZ: Asia/Ho_Chi_Minh
+    networks:
+      - internal
+    depends_on:
+      # - d4zum.nx
+      - d4zum.strapi
+      - d4zum.pgadmin
+    links:
+      # - "d4zum.nx:d4zum.nx"
+      - "d4zum.strapi:d4zum.strapi"
+      - "d4zum.pgadmin:d4zum.pgadmin"
+    ports:
+      - ${NGINX_PORT}:3666
+    volumes:
+      - ./nginx/log/:/var/log/nginx/
+
+  # strapi
+  d4zum.strapi:
+    build:
+      context: ./strapi
+      dockerfile: Dockerfile
+    image: d4zum.strapi
+    container_name: d4zum.strapi
+    restart: unless-stopped
+    environment:
+      TZ: Asia/Ho_Chi_Minh
+    ports:
+      - ${STRAPI_PORT}:1337
+    volumes:
+      - ./strapi/.cache:/app/.cache
+      - ./strapi/build:/app/build
+      - ./strapi/config:/app/config
+      - ./strapi/database:/app/database
+      - ./strapi/public:/app/public
+      - ./strapi/src:/app/src
+      - ./strapi/.editorconfig:/app/.editorconfig
+      - ./strapi/.env:/app/.env
+      - ./strapi/.eslintignore:/app/.eslintignore
+      - ./strapi/.eslintrc:/app/.eslintrc
+      - ./strapi/.strapi-updater.json:/app/.strapi-updater.json
+      - ./strapi/favicon.ico:/app/favicon.ico
+    depends_on:
+      - d4zum.postgres
+    networks:
+      - internal
+    links:
+      - "d4zum.postgres:d4zum.postgres"
+
+  # # nextjs
+  # d4zum.nx:
+  #   build:
+  #     context: ./nextjs
+  #     dockerfile: Dockerfile
+  #   image: d4zum.nx
+  #   container_name: d4zum.nx
+  #   restart: unless-stopped
+  #   # ports:
+  #   #   - ${NEXTJS_PORT}:3000
+  #   volumes:
+  #     # - ./nextjs/.next:/app/.next
+  #     # - ./nextjs/@types:/app/@types
+  #     - ./nextjs/components:/app/components
+  #     - ./nextjs/lib:/app/lib
+  #     - ./nextjs/pages:/app/pages
+  #     - ./nextjs/public:/app/public
+  #     - ./nextjs/services:/app/services
+  #     - ./nextjs/styles:/app/styles
+  #     - ./nextjs/.env.local:/app/.env.local
+  #     - ./nextjs/next-env.d.ts:/app/next-env.d.ts
+  #     - ./nextjs/next.config.js:/app/next.config.js
+  #     - ./nextjs/postcss.config.js:/app/postcss.config.js
+  #     - ./nextjs/tailwind.config.js:/app/tailwind.config.js
+  #     - ./nextjs/tsconfig.json:/app/tsconfig.json
+  #   depends_on:
+  #     - d4zum.strapi
+  #   networks:
+  #     - internal
+  #   links:
+  #     - "d4zum.strapi:d4zum.strapi"
+
+  # postgres
+  d4zum.postgres:
+    image: postgres
+    container_name: d4zum.postgres
+    environment:
+      TZ: Asia/Ho_Chi_Minh
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - ./postgres/data:/var/lib/postgresql/data
+      # copy the sql script to create tables
+      - ./postgres/init/dbinit.sql:/docker-entrypoint-initdb.d/dbinit.sql
+    networks:
+      - internal
+    restart: unless-stopped
+
+  # postgres admin
+  d4zum.pgadmin:
+    container_name: d4zum.pgadmin
+    image: dpage/pgadmin4
+    restart: unless-stopped
+    environment:
+      TZ: Asia/Ho_Chi_Minh
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+    volumes:
+      - ./postgres/pgadmin:/var/lib/pgadmin
+    ports:
+      - ${PGADMIN_PORT}:80
+    networks:
+      - internal
+    depends_on:
+      - d4zum.postgres
+    links:
+      - "d4zum.postgres:d4zum.postgres"
+
+networks:
+  internal:

@@ -1,0 +1,8 @@
+*/**/node_modules
+*/**/*-lock.json
+./nginx/log
+./nginx/log/**
+./postgres/data
+./postgres/data/**
+./postgres/pgadmin
+./postgres/pgadmin/**
