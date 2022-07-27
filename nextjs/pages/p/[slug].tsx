@@ -13,7 +13,7 @@ import dynamic from "next/dynamic"
 import Head from "next/head"
 import Link from "next/link"
 import { ParsedUrlQuery } from "querystring"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 
 const LoginReminder = dynamic(() => import("@components/LoginReminder"), {
   ssr: false
@@ -26,8 +26,10 @@ const CommentEditor = dynamic(() => import("@components/CommentEditor"), {
 const Topic: NextPage = ({
   post,
   reactions,
-  comments
+  comments: initalComments
 }: Props) => {
+  const [comments, updateComments] = useState<IComment[]>(initalComments)
+
   useEffect(() => {
     ((function (hljs) {
       if (hljs) {
@@ -37,7 +39,14 @@ const Topic: NextPage = ({
       // @ts-ignore
       hljs
     )
-  }, [])
+  }, [comments])
+
+  const handleRefreshComment = async () => {
+    let resp = await getPostMeta({ slug: post.slug })
+    if (resp?.comments) {
+      updateComments(resp?.comments)
+    }
+  }
 
   return <>
     <Head>
@@ -268,7 +277,7 @@ const Topic: NextPage = ({
         <div className="tt-topic-list">
           <LoginReminder />
         </div>
-        <CommentEditor />
+        <CommentEditor postId={post.id} onCreateCommentCB={() => handleRefreshComment()} />
         <SuggestedTopic />
       </div>
     </main>

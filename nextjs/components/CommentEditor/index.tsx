@@ -1,8 +1,17 @@
+import IComment from "@interfaces/IComment"
 import { getCookie } from "cookies-next"
 import { useEffect, useState } from "react"
 import Showdown from "showdown"
 
-const CommentEditor = () => {
+type Props = {
+  postId: string,
+  onCreateCommentCB?: (p: IComment) => void
+}
+
+const CommentEditor = ({
+  postId,
+  onCreateCommentCB
+}: Props) => {
   const [cmtEditor, setCmtEditor] = useState<any>(null)
 
   useEffect(() => {
@@ -26,10 +35,33 @@ const CommentEditor = () => {
 
   const handlePostComment = async () => {
     const body = {
-      content: (new Showdown.Converter()).makeHtml(cmtEditor.value())
+      content: (new Showdown.Converter()).makeHtml(cmtEditor.value()),
+      postId: (postId)
     }
 
-    console.log(body);
+    fetch("/api/v1/post/comment", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(body)
+    })
+      .then(async resp => {
+        let json = await resp.json();
+        console.log(json);
+        if (resp.status === 200) {
+          cmtEditor.value("")
+          if (onCreateCommentCB) {
+            onCreateCommentCB(json.data as IComment)
+          }
+        }
+        else {
+          throw json.error
+        }
+      })
+      .catch(error => {
+        console.log(error);
+      })
   }
 
   return <div className="tt-wrapper-inner">
@@ -58,10 +90,10 @@ const CommentEditor = () => {
   </div>
 }
 
-export default () => {
+export default (props: Props) => {
   const jwtToken = getCookie("jwt")
   if (jwtToken) {
-    return <CommentEditor />
+    return <CommentEditor {...props} />
   }
   else {
     return null

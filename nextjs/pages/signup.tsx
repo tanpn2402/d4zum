@@ -58,7 +58,7 @@ const PageSignUp: NextPage = ({
                 </div>
               </>}
 
-              <p>Có tài khoản rồi? Vậy thì <Link href={`/login?cb=${encodeURIComponent(cbUrl)}`}><a className="tt-underline">đăng nhập đi</a></Link></p>
+              <p>Có tài khoản rồi? Vậy thì <Link href={`/login?cb=${encodeURIComponent(cbUrl as string)}`}><a className="tt-underline">đăng nhập đi</a></Link></p>
               {/* <div className="tt-notes">
                 By signing up, signing in or continuing, I agree to
                 Forum19’s <a href="#" className="tt-underline">Terms of Use</a> and <a href="#" className="tt-underline">Privacy Policy.</a>

@@ -66,7 +66,7 @@ const PageLogin: NextPage = ({
               <div className="form-group">
                 <button type="submit" className="btn btn-secondary btn-block">Vô</button>
               </div>
-              <p>Không có tài khoản? Đừng lo, hãy <Link href={`/signup?cb=${encodeURIComponent(cbUrl)}`}><a className="tt-underline">đăng kí đi</a></Link></p>
+              <p>Không có tài khoản? Đừng lo, hãy <Link href={`/signup?cb=${encodeURIComponent(cbUrl as string)}`}><a className="tt-underline">đăng kí đi</a></Link></p>
               {/* <div className="tt-notes">
                 By Logging in, signing in or continuing, I agree to
                 Forum19’s <a href="#" className="tt-underline">Terms of Use</a> and <a href="#" className="tt-underline">Privacy Policy.</a>
