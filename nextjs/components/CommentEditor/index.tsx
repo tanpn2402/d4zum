@@ -1,3 +1,4 @@
+import { getCookie } from "cookies-next"
 import { useEffect, useState } from "react"
 import Showdown from "showdown"
 
@@ -57,4 +58,12 @@ const CommentEditor = () => {
   </div>
 }
 
-export default CommentEditor
+export default () => {
+  const jwtToken = getCookie("jwt")
+  if (jwtToken) {
+    return <CommentEditor />
+  }
+  else {
+    return null
+  }
+}

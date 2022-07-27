@@ -1,5 +1,17 @@
 
-export default async function graphQL(query: string, { variables }: any = {}, token?: string) {
+interface Error {
+  message: string
+  extensions: {
+    [key: string]: any
+  }
+}
+
+interface GrapQLResponse<T> {
+  errors: Error[]
+  data: T
+}
+
+export default async function graphQL<T>(query: string, { variables }: any = {}, token?: string): Promise<GrapQLResponse<T>> {
   let GRAPHQL_URL = '';
   if (process.env.GRAPHQL_HTTP !== undefined) {
     GRAPHQL_URL = `${process.env.GRAPHQL_HTTP}://${process.env.GRAPHQL_HOST}:${process.env.GRAPHQL_PORT}`;
@@ -21,12 +33,12 @@ export default async function graphQL(query: string, { variables }: any = {}, to
     }),
   })
 
-  const json = await res.json()
+  const json: GrapQLResponse<T> = await res.json()
   if (json.errors) {
     console.error(json.errors)
     console.error(query);
-    throw new Error('Failed to fetch API')
+    // throw new Error('Failed to fetch API')
   }
 
-  return json.data
+  return json
 }

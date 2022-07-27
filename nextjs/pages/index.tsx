@@ -1,4 +1,3 @@
-import LoginReminder from "@components/LoginReminder"
 import MainHeader from "@components/MainHeader"
 import MobileMenu from "@components/MainHeader/mobile-menu"
 import SvgSprite from "@components/SvgSprite"
@@ -6,8 +5,13 @@ import IPost from "@interfaces/IPost"
 import { get as getPosts } from "@services/graphql/api/Post.api"
 import { formatDateTime } from "@utils/formatter"
 import type { GetServerSideProps, NextPage } from 'next'
+import dynamic from "next/dynamic"
 import Head from "next/head"
 import Link from "next/link"
+
+const LoginReminder = dynamic(() => import("@components/LoginReminder"), {
+  ssr: false
+})
 
 const Home: NextPage = ({
   posts

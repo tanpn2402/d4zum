@@ -329,6 +329,9 @@
 		margin-bottom: 7px;
 		&:not(:first-child){
 			margin-left: 15px;
+			&:hover {
+				fill: #CCC;
+			}
 		}
 	}
 }

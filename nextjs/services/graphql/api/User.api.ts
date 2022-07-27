@@ -1,11 +1,141 @@
 import IPhoto from "@interfaces/IPhoto";
 import IUser from "@interfaces/IUser";
 import UploadFileEntity from "@services/entity/UploadFile.entity";
+import UserAttribute from "@services/entity/User.attribute";
 import UserEntity from "@services/entity/User.entity";
+import UserPermissionEntity from "@services/entity/UserPermission.entity";
+import graphQL from "./api";
 import UtilParser from "./UtilParser";
 
 export function parseUser(user: UserEntity): IUser {
   return UtilParser<IUser, UserEntity>(user, {
     picture: user => UtilParser<IPhoto, UploadFileEntity>(user.attributes.picture?.data)
   })
+}
+
+interface UserPermissionInputProps {
+  username: string
+  password: string
+  email?: string
+  name?: string
+}
+
+export async function validatePassword({
+  password,
+  username
+}: UserPermissionInputProps) {
+  let resp = await graphQL<{
+    user: {
+      jwt: string
+      user: UserPermissionEntity
+    }
+  }>(
+    `mutation login($identifier: String!, $password: String!) {
+      user: login(input: {
+        identifier: $identifier
+        password: $password
+      }) {
+        jwt
+        user {
+          id
+          username
+          email
+          confirmed
+          blocked
+        }
+      }
+    }`, {
+    variables: {
+      "identifier": username,
+      "password": password
+    }
+  }, process.env.GRAPHQL_BEARER_TOKEN_WRITE)
+
+  return resp
+}
+
+export async function create({
+  password,
+  username,
+  email,
+  name
+}: UserPermissionInputProps) {
+  let resp = await graphQL<{
+    user: {
+      jwt: string
+      user: UserEntity
+    }
+  }>(
+    `mutation register($username: String!, $password: String!, $email: String!) {
+      user: register (input: {
+        username: $username,
+        email: $email,
+        password: $password
+      }) {
+        jwt
+        user {
+          id
+          username
+        }
+      }
+    }`, {
+    variables: {
+      "username": username,
+      "password": password,
+      "email": email,
+      "name": name
+    }
+  }, process.env.GRAPHQL_BEARER_TOKEN_WRITE)
+
+  return resp
+}
+
+
+export async function getById(id: string): Promise<IUser | null> {
+  let resp = await graphQL<{
+    users: {
+      data: UserEntity[]
+    }
+  }>(
+    `query getUsers($id: ID) {
+      users : usersPermissionsUsers(
+        filters: {
+          id: {
+            eq: $id
+          }
+        }
+      ) {
+        data {
+          id
+          attributes {
+            username
+            email
+            name
+            picture {
+              data {
+                id
+                attributes {
+                  url
+                  alternativeText
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    `, {
+    variables: {
+      "id": id
+    }
+  })
+
+  if (resp.data.users?.data?.[0]) {
+    return UtilParser<IUser, UserEntity>(resp.data.users?.data?.[0], {
+      picture: user => UtilParser<IPhoto, UploadFileEntity>(user.attributes.picture?.data)
+    })
+  }
+  else {
+    return null
+  }
 }

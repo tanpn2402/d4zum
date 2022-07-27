@@ -1,18 +1,13 @@
 import ICategory from "@interfaces/ICategory";
 import IComment from "@interfaces/IComment";
-import IPhoto from "@interfaces/IPhoto";
 import IPost from "@interfaces/IPost";
 import IReaction from "@interfaces/IReaction";
 import ITag from "@interfaces/ITag";
-import IUser from "@interfaces/IUser";
-import BaseEntity from "@services/entity/Base.entity";
 import CategoryEntity from "@services/entity/Category.entity";
 import CommentEntity from "@services/entity/Comment.entity";
 import PostEntity from "@services/entity/Post.entity";
 import ReactionEntity from "@services/entity/Reaction.entity";
 import TagEntity from "@services/entity/Tag.entity";
-import UploadFileAttribute from "@services/entity/UploadFile.attribute";
-import UserEntity from "@services/entity/User.entity";
 import graphQL from './api';
 import { parseUser } from "./User.api";
 import UtilParser from './UtilParser';
@@ -21,16 +16,22 @@ type GetPostProps = {
   slug?: string
 }
 
+type PostGraphQLResponse = {
+  posts: {
+    data: PostEntity[]
+  }
+}
+
 export async function get({
   slug
 }: GetPostProps): Promise<IPost[]> {
-  let resp = await graphQL(queryPostSchema, {
+  let resp = await graphQL<PostGraphQLResponse>(queryPostSchema, {
     variables: {
       slug
     }
   })
 
-  let posts: IPost[] = resp?.posts?.data?.map?.((post: PostEntity) => {
+  let posts: IPost[] = resp.data?.posts?.data?.map?.((post: PostEntity) => {
     let p = UtilParser<IPost, PostEntity>(post, {
       tags: post => post.attributes.tags?.data?.map?.(tag => UtilParser<ITag, TagEntity>(tag)),
       categories: post => post.attributes.categories?.data?.map?.(category => UtilParser<ICategory, CategoryEntity>(category)),
@@ -51,13 +52,13 @@ export async function get({
 export async function getMeta({
   slug
 }: GetPostProps): Promise<IPost> {
-  let resp = await graphQL(queryPostMetaSchema, {
+  let resp = await graphQL<PostGraphQLResponse>(queryPostMetaSchema, {
     variables: {
       slug
     }
   })
 
-  let posts: IPost[] = resp?.posts?.data?.map?.((post: PostEntity) => {
+  let posts: IPost[] = resp.data?.posts?.data?.map?.((post: PostEntity) => {
     let p = UtilParser<IPost, PostEntity>(post, {
       comments: post => post.attributes.comments?.data?.map?.(comment => UtilParser<IComment, CommentEntity>(comment, {
         user: cmt => parseUser(cmt.attributes.user?.data),

@@ -1,5 +1,3 @@
-import CommentEditor from "@components/CommentEditor"
-import LoginReminder from "@components/LoginReminder"
 import MainHeader from "@components/MainHeader"
 import MobileMenu from "@components/MainHeader/mobile-menu"
 import SuggestedTopic from "@components/SuggestedTopic"
@@ -11,11 +9,19 @@ import { get as getPosts, getMeta as getPostMeta } from "@services/graphql/api/P
 import { formatDateTime } from "@utils/formatter"
 import ReactionType from "enums/ReactionType"
 import { GetServerSideProps, NextPage } from "next"
+import dynamic from "next/dynamic"
 import Head from "next/head"
 import Link from "next/link"
 import { ParsedUrlQuery } from "querystring"
 import { useEffect } from "react"
 
+const LoginReminder = dynamic(() => import("@components/LoginReminder"), {
+  ssr: false
+})
+
+const CommentEditor = dynamic(() => import("@components/CommentEditor"), {
+  ssr: false
+})
 
 const Topic: NextPage = ({
   post,

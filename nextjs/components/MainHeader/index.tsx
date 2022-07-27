@@ -1,6 +1,10 @@
+import dynamic from "next/dynamic"
 import Link from "next/link"
 import MainMenu from "./main-menu"
-import UserMenu from "./user-menu"
+
+const UserMenu = dynamic(() => import('./user-menu'), {
+  ssr: false
+})
 
 const MainHeader = () => {
   return <header id="tt-header">
@@ -109,10 +113,6 @@ const MainHeader = () => {
           {/* /tt-search */}
         </div>
         <div className="col-auto ms-auto">
-          {/* <div className="tt-account-btn">
-            <a href="page-login.html" className="btn btn-primary">Log in</a>
-            <a href="page-signup.html" className="btn btn-secondary">Sign up</a>
-          </div> */}
           <UserMenu />
         </div>
       </div>
