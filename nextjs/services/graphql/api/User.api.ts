@@ -59,35 +59,38 @@ export async function create({
   username,
   email,
   name
-}: UserPermissionInputProps) {
+}: UserPermissionInputProps): Promise<IUser | null> {
   let resp = await graphQL<{
     user: {
-      jwt: string
-      user: UserEntity
+      data: UserEntity
     }
   }>(
-    `mutation register($username: String!, $password: String!, $email: String!) {
-      user: register (input: {
-        username: $username,
-        email: $email,
-        password: $password
-      }) {
-        jwt
-        user {
+    `mutation register($input: UsersPermissionsUserInput!) {
+      user: createUsersPermissionsUser(data: $input) {
+        data {
           id
-          username
+          attributes {
+            username
+            name
+            email
+          }
         }
       }
     }`, {
     variables: {
-      "username": username,
-      "password": password,
-      "email": email,
-      "name": name
+      "input": {
+        "username": username,
+        "password": password,
+        "email": email,
+        "name": name
+      }
     }
   }, process.env.GRAPHQL_BEARER_TOKEN_WRITE)
 
-  return resp
+  if (resp.data?.user?.data) {
+    return parseUser(resp.data?.user?.data)
+  }
+  return null
 }
 
 

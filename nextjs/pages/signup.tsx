@@ -41,7 +41,7 @@ const PageSignUp: NextPage = ({
               </div>
               <div className="form-group">
                 <label htmlFor="loginUserPassword">Password</label>
-                <input type="password" name="password" className="form-control" id="loginUserPassword" placeholder="************" />
+                <input type="password" name="password" min={8} max={16} className="form-control" id="loginUserPassword" placeholder="************" />
               </div>
               <div className="form-group hidden">
                 <input type="hidden" name="csrf" className="form-control" value={token} />
@@ -53,7 +53,9 @@ const PageSignUp: NextPage = ({
               {error && error !== "" && <>
                 <div className="tt-single-topic-list">
                   <div className="tt-item tt-wrapper-danger px-4 py-2 mb-4 mt-2">
-                    {error === "PerrmissionDenied" ? "Token đã hết hạn, hãy đăng kí lại nhé" : "Username hoặc Email đã được sử dụng"}
+                    {error === "PerrmissionDenied" ? "Token đã hết hạn, hãy đăng kí lại nhé" :
+                      error === "PleaseInsertRightValues" ? "Vui lòng nhập đúng thông tin" :
+                        "Username hoặc Email đã được sử dụng"}
                   </div>
                 </div>
               </>}

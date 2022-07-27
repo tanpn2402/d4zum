@@ -18,16 +18,32 @@ type RegisterReqBody = {
   cbUrl?: string
 }
 
+function validateReqBody(body: RegisterReqBody) {
+  if (body.name.length < 6 || body.username.length < 6 || body.password.length < 8)
+    return false
+  if (!body.email.includes("@") || body.email.split("@")[0].length < 4)
+    return false
+  return true
+}
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<Data>
 ) {
   if (req.method === "POST" && req.headers["content-type"] === "application/x-www-form-urlencoded") {
     const body: RegisterReqBody = req.body;
-    console.log("Req register", body.username, body.password);
+    console.log("Req register", body);
+
+    // validate
+    if (!validateReqBody(body)) {
+      res.redirect(302, "/signup?error=PleaseInsertRightValues");
+      return
+    }
+    // validate done
+
     const token = getCookie("token", { req, res })
     if (token !== body.csrf) {
-      res.redirect(302, "/register?error=PerrmissionDenied");
+      res.redirect(302, "/signup?error=PerrmissionDenied");
     }
     else {
       let resp = await create({
@@ -37,16 +53,16 @@ export default async function handler(
         name: body.name
       })
 
-      if (resp.errors) {
-        res.redirect(302, "/register?error=EmailOrUsernameIsAlreadyTaken");
+      if (!resp) {
+        res.redirect(302, "/signup?error=EmailOrUsernameIsAlreadyTaken");
       }
       else {
         const jwtData: IJwtAuthenticateData = {
-          id: resp.data.user.user?.id,
-          email: resp.data.user.user?.attributes?.email,
-          picture: resp.data.user.user?.attributes?.picture?.data?.attributes,
-          name: resp.data.user.user?.attributes?.name,
-          username: resp.data.user.user?.attributes?.username
+          id: resp.id,
+          email: resp?.email,
+          picture: resp?.picture,
+          name: resp?.name,
+          username: resp?.username
         }
 
         const jwtToken = JWT.sign(jwtData, process.env.JWT_SECRET_KEY, {
@@ -59,6 +75,6 @@ export default async function handler(
     }
   }
   else {
-    res.redirect(302, "/register?error=MethodNotAllowed");
+    res.redirect(302, "/signup?error=MethodNotAllowed");
   }
 }

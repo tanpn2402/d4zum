@@ -55,7 +55,8 @@ const PageLogin: NextPage = ({
                 {error && error !== "" && <>
                   <div className="tt-single-topic-list">
                     <div className="tt-item tt-wrapper-danger px-4 py-2 mb-4 mt-2">
-                      Sai tên tài khoản hoặc mật khẩu
+                      {error === "PleaseInsertRightValues" ? "Vui lòng nhập đúng thông tin" :
+                        "Sai tên tài khoản hoặc mật khẩu"}
                     </div>
                   </div>
                 </>}

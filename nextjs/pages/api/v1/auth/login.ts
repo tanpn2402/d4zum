@@ -18,6 +18,15 @@ type LoginReqBody = {
   cbUrl?: string
 }
 
+function validateReqBody(body: LoginReqBody) {
+  if (body.username.length < 6 || body.password.length < 8)
+    return false
+  if (body.username.includes("@"))
+    if (body.username.split("@")[0].length < 4)
+      return false
+  return true
+}
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<Data>
@@ -25,6 +34,14 @@ export default async function handler(
   if (req.method === "POST" && req.headers["content-type"] === "application/x-www-form-urlencoded") {
     const body: LoginReqBody = req.body;
     console.log("Req login", body);
+
+    // validate
+    if (!validateReqBody(body)) {
+      res.redirect(302, "/login?error=PleaseInsertRightValues");
+      return
+    }
+    // validate done
+
     const token = getCookie("token", { req, res })
     if (token !== body.csrf) {
       res.redirect(302, "/login?error=PerrmissionDenied&username=" + body.username);
