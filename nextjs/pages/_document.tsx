@@ -23,8 +23,13 @@ class MyDocument extends Document {
         <body>
           <Main />
           <NextScript />
-
+          {/* jquery */}
           <script src="/js/jquery-3.3.1.min.js" />
+          {/* highlighjs */}
+          <link rel="stylesheet" href="/css/hljs.default.min.css" />
+          <script src="/js/highlight.min.js"></script>
+          {/* simple markdown editor */}
+          <script src="/js/simplemde.min.js"></script>
         </body>
       </Html>
     )

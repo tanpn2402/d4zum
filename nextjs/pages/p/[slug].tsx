@@ -11,8 +11,10 @@ import { get as getPosts, getMeta as getPostMeta } from "@services/graphql/api/P
 import { formatDateTime } from "@utils/formatter"
 import ReactionType from "enums/ReactionType"
 import { GetServerSideProps, NextPage } from "next"
+import Head from "next/head"
 import Link from "next/link"
 import { ParsedUrlQuery } from "querystring"
+import { useEffect } from "react"
 
 
 const Topic: NextPage = ({
@@ -20,7 +22,22 @@ const Topic: NextPage = ({
   reactions,
   comments
 }: Props) => {
+  useEffect(() => {
+    ((function (hljs) {
+      if (hljs) {
+        hljs.highlightAll()
+      }
+    }))(
+      // @ts-ignore
+      hljs
+    )
+  }, [])
+
   return <>
+    <Head>
+      <title>{post.title}</title>
+      <link rel="stylesheet" href="/css/simplemde.min.css" />
+    </Head>
     <MobileMenu />
     <MainHeader />
     <main id="tt-pageContent">
@@ -194,7 +211,7 @@ const Topic: NextPage = ({
             </div>
           </div>
           {comments?.map?.(el => {
-            return <div className="tt-item">
+            return <div key={el.id} className="tt-item">
               <div className="tt-single-topic">
                 <div className="tt-item-header pt-noborder">
                   <div className="tt-item-info info-top">
@@ -241,7 +258,7 @@ const Topic: NextPage = ({
         {comments.length > 10 && <div className="tt-wrapper-inner">
           <h4 className="tt-title-separator"><span>Bạn đã đến tận cùng của danh sách bình luận</span></h4>
         </div>}
-        <br/>
+        <br />
         <div className="tt-topic-list">
           <LoginReminder />
         </div>

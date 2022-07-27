@@ -6,12 +6,16 @@ import IPost from "@interfaces/IPost"
 import { get as getPosts } from "@services/graphql/api/Post.api"
 import { formatDateTime } from "@utils/formatter"
 import type { GetServerSideProps, NextPage } from 'next'
+import Head from "next/head"
 import Link from "next/link"
 
 const Home: NextPage = ({
   posts
 }: Props) => {
   return <>
+    <Head>
+      <title>let d4zum = new DevForum(Trang chủ)</title>
+    </Head>
     <MobileMenu />
     <MainHeader />
     <main id="tt-pageContent" className="tt-offset-small">
@@ -37,7 +41,7 @@ const Home: NextPage = ({
             </div>
             <div className="tt-col-description">
               <h6 className="tt-title">
-                <Link href={"/p/" + post.slug}>
+                <Link href={"/p/" + post.slug} >
                   <a>
                     {post.is_pinned && <svg className="tt-icon">
                       <use xlinkHref="#icon-pinned" />
