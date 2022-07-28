@@ -17,8 +17,10 @@ const Page404: NextPage = () => {
             </svg>
           </span>
           <h6 className="tt-title">ERROR 404</h6>
-          <p>Sorry we can’t find what you are looking for, here’s some<br />
-            <a href="index.html" className="tt-color-dark tt-underline-02">suggested topics</a> for you.</p>
+          <p>Chúng tôi cũng không thể tìm thấy những gì mà bạn đang tìm, đây là những gì<br />
+            {/* <a href="index.html" className="tt-color-dark tt-underline-02">suggested topics</a> for you.</p> */}
+            chúng tôi có thể gợi ý cho bạn
+            </p>
         </div>
         
         <SuggestedTopic />

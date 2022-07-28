@@ -17,7 +17,7 @@ const MainMenu = () => {
       <ul>
         <li>
           <Link href="/categories">
-            <a><span>Danh mục</span></a>
+            <a><span>Chủ đề</span></a>
           </Link>
         </li>
         <li>
