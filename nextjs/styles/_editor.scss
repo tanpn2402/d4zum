@@ -163,3 +163,30 @@
     color: #2172cd !important;
   }
 }
+
+// CK Editor
+.ck {
+  &.ck-editor {
+    &__main>.ck-editor__editable {
+      border-color: transparent !important;
+      background-color: #e2e7ea !important;
+      transition: border-color 0.2s linear;
+    }
+
+    &__editable.ck-focused:not(.ck-editor__nested-editable) {
+      box-shadow: none !important;
+      border-color: #2172cd !important;
+    }
+  }
+
+  &.ck-toolbar {
+    border-top: 0 !important;
+    border-left: 0 !important;
+    border-right: 0 !important;
+    background-color: #dbdbdb !important;
+  }
+
+  &-editor__editable_inline {
+    min-height: 300px;
+  }
+}

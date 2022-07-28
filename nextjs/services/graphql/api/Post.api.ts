@@ -8,6 +8,7 @@ import CommentEntity from "@services/entity/Comment.entity";
 import PostEntity from "@services/entity/Post.entity";
 import ReactionEntity from "@services/entity/Reaction.entity";
 import TagEntity from "@services/entity/Tag.entity";
+import { generateSlug } from "@utils/helper";
 import graphQL from './api';
 import { parseUser } from "./User.api";
 import UtilParser from './UtilParser';
@@ -73,6 +74,66 @@ export async function getMeta({
 
   return posts[0]
 }
+
+export async function create({
+  content,
+  title,
+  userId,
+  categories,
+  tags
+}: {
+  userId: string
+  title: string
+  content: string
+  categories?: string[]
+  tags?: string[]
+}): Promise<IPost> {
+  let resp = await graphQL<{
+    post: {
+      data: PostEntity
+    }
+  }>(
+    `mutation createPost($userId: ID, $content: String, $title: String, $slug: String, $categories: [ID], $tags: [ID]) {
+      post: createPost(data: {
+        user: $userId,
+        title: $title,
+        content: $content,
+        categories: $categories,
+        tags: $tags,
+        slug: $slug,
+        is_blocked: false,
+        is_locked: false,
+        is_pinned: false,
+        is_trending: false,
+        publishedAt: "${new Date().toISOString()}"
+      }) {
+        data {
+          id
+          attributes {
+            slug
+            title
+          }
+        }
+      }
+    }`, {
+    variables: {
+      "userId": userId,
+      "content": content,
+      "title": title,
+      "categories": categories,
+      "tags": tags,
+      "slug": generateSlug(title, {})
+    }
+  }, process.env.GRAPHQL_BEARER_TOKEN_WRITE)
+
+  if (!resp.errors) {
+    return UtilParser<IPost, PostEntity>(resp.data.post?.data)
+  }
+  else {
+    return null
+  }
+}
+
 
 const queryPostSchema = `query query($slug: String) {
   posts (

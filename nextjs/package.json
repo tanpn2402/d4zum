@@ -15,8 +15,8 @@
     "jwt-decode": "^3.1.2",
     "magnific-popup": "^1.1.0",
     "next": "12.2.3",
-    "react": "18.2.0",
-    "react-dom": "18.2.0",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2",
     "showdown": "^2.1.0"
   },
   "devDependencies": {

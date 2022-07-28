@@ -30,6 +30,9 @@ class MyDocument extends Document {
           <script src="/js/highlight.min.js"></script>
           {/* simple markdown editor */}
           <script src="/js/simplemde.min.js"></script>
+          {/* ckeditor */}
+          <script src="/js/translations/vi.js"></script>
+          <script src="/js/ckeditor.js"></script>
         </body>
       </Html>
     )

@@ -1,9 +1,14 @@
 
 
+import dynamic from "next/dynamic"
 import Link from "next/link"
 import { useEffect } from "react"
 import onLoad from "./main-menu-onload"
 
+
+const DynamicMenu = dynamic(() => import('./dynamic-menu'), {
+  ssr: false
+})
 
 const MainMenu = () => {
 
@@ -25,6 +30,7 @@ const MainMenu = () => {
             <a><span>Xu hướng</span></a>
           </Link>
         </li>
+        <DynamicMenu />
         {/* <li>
           <a href="page-single-user.html"><span>Pages</span></a>
           <ul>

@@ -56,14 +56,14 @@ export default async function handler(
         res.redirect(302, "/login?error=InvalidIdentifierOrPassword&username=" + body.username);
       }
       else {
-        const user: IUser = await getById(resp.data.user.user.id)
+        const user: IUser = await getById(resp.data?.user?.data.id)
 
         const jwtData: IJwtAuthenticateData = {
-          id: resp.data.user.user.id,
-          email: resp.data.user.user.email,
+          id: resp.data?.user?.data?.id,
+          email: resp.data?.user?.data?.email,
           picture: user.picture,
           name: user.name,
-          username: resp.data.user.user.username
+          username: resp.data?.user?.data?.username
         }
 
         const jwtToken = JWT.sign(jwtData, process.env.JWT_SECRET_KEY, {
@@ -71,6 +71,7 @@ export default async function handler(
         })
 
         setCookie("jwt", jwtToken, { req, res })
+        setCookie("secret", resp.data?.user?.jwt, { req, res })
         res.redirect(302, body.cbUrl || "/");
       }
     }

@@ -58,11 +58,11 @@ export default async function handler(
       }
       else {
         const jwtData: IJwtAuthenticateData = {
-          id: resp.id,
-          email: resp?.email,
-          picture: resp?.picture,
-          name: resp?.name,
-          username: resp?.username
+          id: resp.data?.id,
+          email: resp.data?.email,
+          picture: resp.data?.picture,
+          name: resp.data?.name,
+          username: resp.data?.username
         }
 
         const jwtToken = JWT.sign(jwtData, process.env.JWT_SECRET_KEY, {
@@ -70,6 +70,7 @@ export default async function handler(
         })
 
         setCookie("jwt", jwtToken, { req, res })
+        setCookie("secret", resp.jwt, { req, res })
         res.redirect(302, body.cbUrl || "/");
       }
     }

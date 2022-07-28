@@ -27,7 +27,7 @@ export async function validatePassword({
   let resp = await graphQL<{
     user: {
       jwt: string
-      user: UserPermissionEntity
+      data: UserPermissionEntity
     }
   }>(
     `mutation login($identifier: String!, $password: String!) {
@@ -36,7 +36,7 @@ export async function validatePassword({
         password: $password
       }) {
         jwt
-        user {
+        data: user {
           id
           username
           email
@@ -59,9 +59,10 @@ export async function create({
   username,
   email,
   name
-}: UserPermissionInputProps): Promise<IUser | null> {
+}: UserPermissionInputProps): Promise<{ jwt?: string, data: IUser } | null> {
   let resp = await graphQL<{
     user: {
+      jwt?: string
       data: UserEntity
     }
   }>(
@@ -88,7 +89,15 @@ export async function create({
   }, process.env.GRAPHQL_BEARER_TOKEN_WRITE)
 
   if (resp.data?.user?.data) {
-    return parseUser(resp.data?.user?.data)
+    let r = await validatePassword({
+      "username": username,
+      "password": password
+    })
+
+    return {
+      jwt: r.data?.user?.jwt,
+      data: parseUser(resp.data?.user?.data)
+    }
   }
   return null
 }
