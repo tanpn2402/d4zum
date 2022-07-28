@@ -14,6 +14,8 @@ interface PostAttribute<ICategory, IUser, ITag, IReaction, IComment> extends Bas
   is_pinned?: boolean
   reactions?: IReaction
   comments?: IComment
+  is_private?: boolean
+  allow_comment_by_picture?: boolean
 }
 
 export default PostAttribute

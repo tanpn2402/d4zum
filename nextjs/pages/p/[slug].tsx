@@ -7,6 +7,7 @@ import IPost from "@interfaces/IPost"
 import IReaction from "@interfaces/IReaction"
 import { get as getPosts, getMeta as getPostMeta } from "@services/graphql/api/Post.api"
 import { formatDateTime } from "@utils/formatter"
+import { getCookies } from "cookies-next"
 import ReactionType from "enums/ReactionType"
 import { GetServerSideProps, NextPage } from "next"
 import dynamic from "next/dynamic"
@@ -77,11 +78,11 @@ const Topic: NextPage = ({
                 </h3>
                 <div className="tt-item-tag">
                   <ul className="tt-list-badge">
-                    <li>
+                    {post.categories[0]?.name && <li>
                       <Link href={"/category/" + post.categories[0]?.slug}>
                         <a><span className="tt-color03 tt-badge">{post.categories[0]?.name}</span></a>
                       </Link>
-                    </li>
+                    </li>}
 
                     {post.tags?.map(tag => <li key={tag.id}>
                       <Link href={"/tag/" + tag.name?.toLowerCase()}>
@@ -277,7 +278,7 @@ const Topic: NextPage = ({
         <div className="tt-topic-list">
           <LoginReminder />
         </div>
-        <CommentEditor postId={post.id} onCreateCommentCB={() => handleRefreshComment()} />
+        <CommentEditor post={post} onCreateCommentCB={() => handleRefreshComment()} />
         <SuggestedTopic />
       </div>
     </main>
@@ -312,6 +313,21 @@ export const getServerSideProps: GetServerSideProps<Props> = async (context) => 
     }
   }
 
+  let cookies = getCookies({
+    req: context.req,
+    res: context.res,
+  })
+
+  if (posts[0].is_private) {
+    if ((!cookies["jwt"] || !cookies["secret"])) {
+      return {
+        redirect: {
+          destination: '/private-post',
+          permanent: false,
+        },
+      }
+    }
+  }
   return {
     props: {
       post: posts[0],

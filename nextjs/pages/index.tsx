@@ -50,7 +50,7 @@ const Home: NextPage = ({
                     {post.is_pinned && <svg className="tt-icon">
                       <use xlinkHref="#icon-pinned" />
                     </svg>}
-                    {post.is_locked && <svg className="tt-icon">
+                    {post.is_private && <svg className="tt-icon">
                       <use xlinkHref="#icon-locked" />
                     </svg>}
                     {post.title}

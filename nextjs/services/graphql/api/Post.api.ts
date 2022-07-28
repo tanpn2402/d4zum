@@ -104,7 +104,7 @@ export async function create({
         is_blocked: false,
         is_locked: false,
         is_pinned: false,
-        is_trending: false,
+        is_trending: false
         publishedAt: "${new Date().toISOString()}"
       }) {
         data {
@@ -155,6 +155,8 @@ const queryPostSchema = `query query($slug: String) {
         is_locked
         is_trending
         is_pinned
+        is_private
+        allow_comment_by_picture
         createdAt
         updatedAt
         publishedAt

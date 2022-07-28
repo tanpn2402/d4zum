@@ -1,15 +1,16 @@
 import initEditor from "@components/Editor/init"
 import IComment from "@interfaces/IComment"
+import IPost from "@interfaces/IPost"
 import { getCookie } from "cookies-next"
 import { useEffect, useState } from "react"
 
 type Props = {
-  postId: string,
+  post: IPost,
   onCreateCommentCB?: (p: IComment) => void
 }
 
 const CommentEditor = ({
-  postId,
+  post,
   onCreateCommentCB
 }: Props) => {
   const [cmtEditor, setCmtEditor] = useState<any>(null)
@@ -22,11 +23,11 @@ const CommentEditor = ({
           element: document.querySelector('.editor'),
           toolbar: [
             'codeBlock',
-            'imageInsert',
+            post.allow_comment_by_picture && 'imageInsert',
             '|',
             'undo',
             'redo'
-          ]
+          ].filter(e => typeof e === "string")
         })
           .then((editor: any) => {
             setCmtEditor(editor);
@@ -45,7 +46,7 @@ const CommentEditor = ({
   const handlePostComment = async () => {
     const body = {
       content: cmtEditor.getData(),
-      postId: (postId)
+      postId: post.id
     }
 
     fetch("/api/v1/post/comment", {
