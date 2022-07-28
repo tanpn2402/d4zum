@@ -1,7 +1,7 @@
+import initEditor from "@components/Editor/init"
 import IComment from "@interfaces/IComment"
 import { getCookie } from "cookies-next"
 import { useEffect, useState } from "react"
-import Showdown from "showdown"
 
 type Props = {
   postId: string,
@@ -15,27 +15,36 @@ const CommentEditor = ({
   const [cmtEditor, setCmtEditor] = useState<any>(null)
 
   useEffect(() => {
-    (function (SimpleMDE) {
-      if (!cmtEditor && SimpleMDE) {
-        const editor = new SimpleMDE({
-          element: document.getElementById("cmtEditor"),
-          autofocus: false,
-          toolbar: ["code", "preview"],
-          renderingConfig: {
-            codeSyntaxHighlighting: true
-          }
-        });
-        setCmtEditor(editor)
+    (function (ClassicEditor) {
+      if (ClassicEditor && !cmtEditor) {
+        initEditor(ClassicEditor, {
+          secret: getCookie("secret")?.toString?.(),
+          element: document.querySelector('.editor'),
+          toolbar: [
+            'codeBlock',
+            'imageInsert',
+            '|',
+            'undo',
+            'redo'
+          ]
+        })
+          .then((editor: any) => {
+            setCmtEditor(editor);
+          })
+          .catch((error: any) => {
+            console.error('Oops, something went wrong!');
+            console.error(error);
+          });
       }
     })(
       // @ts-ignore
-      SimpleMDE
+      ClassicEditor
     )
   }, [])
 
   const handlePostComment = async () => {
     const body = {
-      content: (new Showdown.Converter()).makeHtml(cmtEditor.value()),
+      content: cmtEditor.getData(),
       postId: (postId)
     }
 
@@ -50,7 +59,7 @@ const CommentEditor = ({
         let json = await resp.json();
         console.log(json);
         if (resp.status === 200) {
-          cmtEditor.value("")
+          cmtEditor.setData("")
           if (onCreateCommentCB) {
             onCreateCommentCB(json.data as IComment)
           }
@@ -64,12 +73,13 @@ const CommentEditor = ({
       })
   }
 
-  return <div className="tt-wrapper-inner">
-    <div className="pt-editor form-default">
+  return <div>
+    <div className="pt-editor form-default pt-commentor">
       <h6 className="pt-title">Viết bình luận</h6>
-
-      <div className="form-group">
-        <textarea id="cmtEditor" name="message" className="form-control" rows={5} placeholder="Ý của bạn là..." defaultValue={""} />
+      <div className="mb-4 p-0 tt-single-topic">
+        <div className="tt-item-description">
+          <div className="editor"></div>
+        </div>
       </div>
       <div className="pt-row">
         <div className="col-auto">

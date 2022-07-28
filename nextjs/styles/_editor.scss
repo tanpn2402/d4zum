@@ -190,3 +190,9 @@
     min-height: 300px;
   }
 }
+
+.pt-commentor {
+  .ck-editor__editable_inline {
+    min-height: 120px;
+  }
+}

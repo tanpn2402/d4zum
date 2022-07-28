@@ -142,6 +142,7 @@ const queryPostSchema = `query query($slug: String) {
         eq: $slug
       }
     }
+    sort: "createdAt:ASC"
   ) {
     data {
       id
