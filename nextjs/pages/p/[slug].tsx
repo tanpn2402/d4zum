@@ -248,7 +248,7 @@ const Topic: NextPage = ({
                     </a>
                   </div>
                 </div>
-                <div className="tt-item-description" dangerouslySetInnerHTML={{ __html: el.content }}></div>
+                <div className="tt-item-description tt-item-description-comment" dangerouslySetInnerHTML={{ __html: el.content }}></div>
                 <div className="tt-item-info info-bottom">
                   {/* <a href="#" className="tt-icon-btn">
                     <i className="tt-icon"><svg><use xlinkHref="#icon-like" /></svg></i>

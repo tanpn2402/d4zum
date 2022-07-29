@@ -120,6 +120,16 @@
 		padding-top: 21px;
 		color: black;
 
+		blockquote {
+			overflow: hidden;
+			padding-right: 1.5em;
+			padding-left: 1.5em;
+			margin-left: 0px;
+			margin-right: 0px;
+			font-style: italic;
+			border-left: 5px solid rgb(204, 204, 204);
+		}
+
 		.tt-title {
 			font-size: 16px;
 			line-height: 26px;
@@ -137,9 +147,38 @@
 			}
 		}
 
-		img {
-			max-width: 50%;
-			height: auto;
+		.image {
+			clear: both;
+			text-align: center;
+			margin: 0.9em auto;
+			min-width: 50px;
+
+			&.image_resized {
+				max-width: 100%;
+				display: block;
+				box-sizing: border-box;
+			}
+
+			figcaption {
+				display: block;
+				caption-side: bottom;
+				word-break: break-word;
+				color: #333333;
+				background-color: #f7f7f7;
+				padding: 0.6em;
+				font-size: 0.75em;
+				outline-offset: -1px;
+			}
+
+			img {
+				max-width: 100%;
+			}
+		}
+
+		&.tt-item-description-comment {
+			img {
+				max-width: 50%;
+			}
 		}
 
 		.video-container {

@@ -160,7 +160,7 @@ const queryPostSchema = `query query($slug: String) {
         eq: $slug
       }
     }
-    sort: "createdAt:ASC"
+    sort: "is_pinned:DESC,createdAt:ASC"
   ) {
     data {
       id
