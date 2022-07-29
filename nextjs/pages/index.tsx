@@ -19,6 +19,12 @@ const Home: NextPage = ({
   return <>
     <Head>
       <title>let d4zum = new DevForum(Trang chủ)</title>
+      <meta name="description" content="Dev Forum: Chia sẻ kiến thức, kinh nghiệm lập trình và những thứ liên quan" />
+    
+      <meta property="og:url" content="https://d4zum.me" />
+      <meta property="og:title" content="let d4zum = new DevForum(Trang chủ)" />
+      <meta property="og:description" content="Dev Forum: Chia sẻ kiến thức, kinh nghiệm lập trình và những thứ liên quan" />
+      {/* <meta property="og:image" content="https://d4zum.me/main-banner.jpg" /> */}
     </Head>
     <MobileMenu />
     <MainHeader />
@@ -60,7 +66,7 @@ const Home: NextPage = ({
               <div className="row align-items-center no-gutters">
                 <div className="col-11">
                   <ul className="tt-list-badge">
-                    {post.tags?.map(tag => <li key={tag.id}>
+                    {post.tags?.map(tag => tag.name?.trim?.() === "" ? null : <li key={tag.id}>
                       <Link href={"/tag/" + tag.name?.toLowerCase()}>
                         <a><span className="tt-badge">{tag.name}</span></a>
                       </Link>
@@ -75,11 +81,11 @@ const Home: NextPage = ({
                 </div>
               </div>
             </div>
-            <div className="tt-col-category">
+            {post.categories[0]?.name && <div className="tt-col-category">
               <Link href={"/category/" + post.categories[0]?.slug}>
                 <a><span className="tt-color03 tt-badge">{post.categories[0]?.name}</span></a>
               </Link>
-            </div>
+            </div>}
             <div className="tt-col-value  hide-mobile">{post.reactionCount}</div>
             <div className="tt-col-value tt-color-select hide-mobile">{post.commentCount}</div>
             {/* <div className="tt-col-value  hide-mobile">12.6k</div> */}

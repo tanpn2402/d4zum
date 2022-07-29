@@ -52,7 +52,13 @@ const Topic: NextPage = ({
   return <>
     <Head>
       <title>{post.title}</title>
+      <meta name="description" content={`Dev Forum bài viết: ${post.title}`} />
       <link rel="stylesheet" href="/css/simplemde.min.css" />
+
+      <meta property="og:url" content={`https://d4zum.me/p/${post.slug}`} />
+      <meta property="og:title" content={post.title} />
+      <meta property="og:description" content={`Dev Forum bài viết: ${post.title}`} />
+      {/* <meta property="og:image" content={post} /> */}
     </Head>
     <MobileMenu />
     <MainHeader />
@@ -84,7 +90,7 @@ const Topic: NextPage = ({
                       </Link>
                     </li>}
 
-                    {post.tags?.map(tag => <li key={tag.id}>
+                    {post.tags?.map(tag => tag.name?.trim?.() === "" ? null : <li key={tag.id}>
                       <Link href={"/tag/" + tag.name?.toLowerCase()}>
                         <a><span className="tt-badge">{tag.name}</span></a>
                       </Link>

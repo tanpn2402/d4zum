@@ -14,11 +14,14 @@ class MyDocument extends Document {
       <Html>
         <Head>
           <meta charSet="utf-8" />
-          <meta name="keywords" content="HTML5 Template" />
-          <meta name="description" content="Forum - Responsive HTML5 Template" />
-          <meta name="author" content="Forum" />
+          <meta name="keywords" content="d4zum" />
+          <meta name="author" content="d4zum" />
           <link rel="shortcut icon" href="favicon/favicon.ico" />
           <meta name="format-detection" content="telephone=no" />
+          {/* Twitter Card Tags */}
+          <meta name="twitter:card" content="summary" />
+          <meta name="twitter:site" content="@d4zum" />
+          <meta name="twitter:creator" content="@d4zum" />
         </Head>
         <body>
           <Main />
