@@ -52,27 +52,45 @@ export async function get({
 
 export async function getMeta({
   slug
-}: GetPostProps): Promise<IPost> {
-  let resp = await graphQL<PostGraphQLResponse>(queryPostMetaSchema, {
+}: GetPostProps): Promise<IPost | null> {
+  let resp = await graphQL<{
+    comments: {
+      data: CommentEntity[]
+    },
+    reactions: {
+      data: ReactionEntity[]
+    },
+    posts: {
+      data: PostEntity[]
+    }
+  }>(queryPostMetaSchema, {
     variables: {
       slug
     }
   })
 
-  let posts: IPost[] = resp.data?.posts?.data?.map?.((post: PostEntity) => {
-    let p = UtilParser<IPost, PostEntity>(post, {
-      comments: post => post.attributes.comments?.data?.map?.(comment => UtilParser<IComment, CommentEntity>(comment, {
-        user: cmt => parseUser(cmt.attributes.user?.data),
-      })),
-      reactions: post => post.attributes.reactions?.data?.map?.(reaction => UtilParser<IReaction, ReactionEntity>(reaction, {
-        user: cmt => parseUser(cmt.attributes.user?.data),
-      })),
+  if (!resp.errors && resp.data?.posts?.data?.[0]) {
+    const comments = resp.data?.comments?.data?.map?.(comment => UtilParser<IComment, CommentEntity>(comment, {
+      user: cmt => parseUser(cmt.attributes.user?.data),
+    }))
+    const reactions = resp.data?.reactions?.data?.map?.(reaction => UtilParser<IReaction, ReactionEntity>(reaction, {
+      user: cmt => parseUser(cmt.attributes.user?.data),
+    }))
+
+    let post = UtilParser<IPost, PostEntity>(resp.data?.posts?.data?.[0], {
+      comments: () => null,
+      reactions: () => null,
+      user: () => null
     })
 
-    return p
-  })
+    post.comments = comments
+    post.reactions = reactions
 
-  return posts[0]
+    return post
+  }
+  else {
+    return null
+  }
 }
 
 export async function create({
@@ -211,6 +229,57 @@ const queryPostSchema = `query query($slug: String) {
 }`
 
 const queryPostMetaSchema = `query query($slug: String) {
+  comments (
+    filters: {
+      post: {
+        slug: {
+          eq: $slug
+        }
+      }
+    }
+    sort: "createdAt:ASC"
+    pagination: {
+      limit: -1
+    }
+  ) {
+    data {
+      id
+      attributes {
+        content
+        createdAt
+        updatedAt
+        is_blocked
+        user {
+          ...userFragment
+        }
+      }
+    }
+  }
+  reactions (
+    filters: {
+      post: {
+        slug: {
+          eq: $slug
+        }
+      }
+    }
+    sort: "createdAt:ASC"
+    pagination: {
+      limit: -1
+    }
+  ) {
+    data {
+      id
+      attributes {
+        type
+        createdAt
+        updatedAt
+        user {
+          ...userFragment
+        }
+      }
+    }
+  }
   posts (
     filters: {
       slug: {
@@ -221,59 +290,26 @@ const queryPostMetaSchema = `query query($slug: String) {
     data {
       id
       attributes {
-        reactions {
-          data {
-            id
-            attributes {
-              type
-              createdAt
-              updatedAt
-              user {
-                data {
-                  id
-                  attributes {
-                    username
-                    name
-                    picture {
-                      data {
-                        id
-                        attributes {
-                          url
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-        comments {
-          data {
-            id
-            attributes {
-              content
-              is_blocked
-              createdAt
-              updatedAt
-              user {
-                data {
-                  id
-                  attributes {
-                    username
-                    name
-                    picture {
-                      data {
-                        id
-                        attributes {
-                          url
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
+        title
+        description
+        slug
+      }
+    }
+  }
+}
+
+fragment userFragment on UsersPermissionsUserEntityResponse {
+  data {
+    id
+    attributes {
+      username
+      name
+      email
+      picture {
+        data {
+          id
+          attributes {
+            url
           }
         }
       }

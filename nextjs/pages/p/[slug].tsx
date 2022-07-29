@@ -337,8 +337,8 @@ export const getServerSideProps: GetServerSideProps<Props> = async (context) => 
   return {
     props: {
       post: posts[0],
-      comments: meta.comments,
-      reactions: meta.reactions
+      comments: meta?.comments || [],
+      reactions: meta?.reactions || []
     }
   };
 }
