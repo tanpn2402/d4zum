@@ -70,6 +70,14 @@
     "is_locked": {
       "type": "boolean",
       "default": false
+    },
+    "is_private": {
+      "type": "boolean",
+      "default": false
+    },
+    "allow_comment_by_picture": {
+      "type": "boolean",
+      "default": false
     }
   }
 }
