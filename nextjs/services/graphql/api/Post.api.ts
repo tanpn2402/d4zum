@@ -9,12 +9,15 @@ import PostEntity from "@services/entity/Post.entity";
 import ReactionEntity from "@services/entity/Reaction.entity";
 import TagEntity from "@services/entity/Tag.entity";
 import { generateSlug } from "@utils/helper";
+import PublicationState from "enums/PublicationState";
 import graphQL from './api';
 import { parseUser } from "./User.api";
 import UtilParser from './UtilParser';
 
 type GetPostProps = {
   slug?: string
+  userId?: string
+  state?: PublicationState
 }
 
 type PostGraphQLResponse = {
@@ -24,11 +27,15 @@ type PostGraphQLResponse = {
 }
 
 export async function get({
-  slug
+  slug,
+  userId,
+  state
 }: GetPostProps): Promise<IPost[]> {
   let resp = await graphQL<PostGraphQLResponse>(queryPostSchema, {
     variables: {
-      slug
+      slug,
+      userId,
+      state
     }
   })
 
@@ -153,14 +160,23 @@ export async function create({
 }
 
 
-const queryPostSchema = `query query($slug: String) {
+const queryPostSchema = `query query($slug: String, $userId: ID, $state: PublicationState) {
   posts (
     filters: {
       slug: {
         eq: $slug
       }
+      user: {
+        id: {
+          eq: $userId
+        }
+      }
+    }
+    pagination: {
+      limit: -1
     }
     sort: "is_pinned:DESC,createdAt:ASC"
+    publicationState: $state
   ) {
     data {
       id

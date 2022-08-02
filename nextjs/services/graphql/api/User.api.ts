@@ -1,7 +1,6 @@
 import IPhoto from "@interfaces/IPhoto";
 import IUser from "@interfaces/IUser";
 import UploadFileEntity from "@services/entity/UploadFile.entity";
-import UserAttribute from "@services/entity/User.attribute";
 import UserEntity from "@services/entity/User.entity";
 import UserPermissionEntity from "@services/entity/UserPermission.entity";
 import graphQL from "./api";
@@ -102,18 +101,31 @@ export async function create({
   return null
 }
 
+export async function getByUsername(username: string): Promise<IUser | null> {
+  return getOne({ username })
+}
 
 export async function getById(id: string): Promise<IUser | null> {
+  return getOne({ id })
+}
+
+async function getOne(p: {
+  id?: string
+  username?: string
+}): Promise<IUser | null> {
   let resp = await graphQL<{
     users: {
       data: UserEntity[]
     }
   }>(
-    `query getUsers($id: ID) {
+    `query getUsers($id: ID, $username: String) {
       users : usersPermissionsUsers(
         filters: {
           id: {
             eq: $id
+          }
+          username: {
+            eq: $username
           }
         }
       ) {
@@ -138,12 +150,13 @@ export async function getById(id: string): Promise<IUser | null> {
     }
     `, {
     variables: {
-      "id": id
+      "id": p.id,
+      "username": p.username
     }
   })
 
-  if (resp.data.users?.data?.[0]) {
-    return UtilParser<IUser, UserEntity>(resp.data.users?.data?.[0], {
+  if (!resp.errors) {
+    return UtilParser<IUser, UserEntity>(resp.data?.users?.data?.[0], {
       picture: user => UtilParser<IPhoto, UploadFileEntity>(user.attributes.picture?.data)
     })
   }

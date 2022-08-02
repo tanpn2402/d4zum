@@ -20,7 +20,7 @@ const Home: NextPage = ({
     <Head>
       <title>let d4zum = new DevForum(Trang chủ)</title>
       <meta name="description" content="Dev Forum: Chia sẻ kiến thức, kinh nghiệm lập trình và những thứ liên quan" />
-    
+
       <meta property="og:url" content="https://d4zum.me" />
       <meta property="og:title" content="let d4zum = new DevForum(Trang chủ)" />
       <meta property="og:description" content="Dev Forum: Chia sẻ kiến thức, kinh nghiệm lập trình và những thứ liên quan" />
@@ -33,7 +33,7 @@ const Home: NextPage = ({
         <div className="tt-topic-list">
           <div className="tt-list-header">
             <div className="tt-col-topic">Bài viết</div>
-            <div className="tt-col-category">Danh mục</div>
+            <div className="tt-col-category">Chủ đề</div>
             <div className="tt-col-value hide-mobile">Tương tác</div>
             <div className="tt-col-value hide-mobile">Bình luận</div>
             {/* <div className="tt-col-value hide-mobile">Views</div> */}
@@ -45,9 +45,13 @@ const Home: NextPage = ({
 
           {posts && posts.map(post => <div key={post.id} className={`tt-item ${post.is_trending ? "tt-itemselect" : ""}`}>
             <div className="tt-col-avatar">
-              <svg className="tt-icon">
-                <use xlinkHref={"#icon-ava-" + post.user?.name?.charAt?.(0)?.toLowerCase?.()} />
-              </svg>
+              <Link href={"/m/" + post.user?.username}>
+                <a>
+                  <svg className="tt-icon">
+                    <use xlinkHref={"#icon-ava-" + post.user?.name?.charAt?.(0)?.toLowerCase?.()} />
+                  </svg>
+                </a>
+              </Link>
             </div>
             <div className="tt-col-description">
               <h6 className="tt-title">
@@ -64,7 +68,7 @@ const Home: NextPage = ({
                 </Link>
               </h6>
               <div className="row align-items-center no-gutters">
-                <div className="col-11">
+                <div className="col-12">
                   <ul className="tt-list-badge">
                     {post.tags?.map(tag => tag.name?.trim?.() === "" ? null : <li key={tag.id}>
                       <Link href={"/tag/" + tag.name?.toLowerCase()}>
@@ -76,20 +80,23 @@ const Home: NextPage = ({
                     <li><a href="#"><span className="tt-badge">elements</span></a></li> */}
                   </ul>
                 </div>
-                <div className="col-1 ms-auto show-mobile">
+                <div className="col-1 show-mobile">
                   <div className="tt-value">{formatDateTime(post.createdAt)}</div>
                 </div>
               </div>
             </div>
             {post.categories[0]?.name && <div className="tt-col-category">
               <Link href={"/category/" + post.categories[0]?.slug}>
-                <a><span className="tt-color03 tt-badge">{post.categories[0]?.name}</span></a>
+                <a><span className="tt-color03 tt-badge" style={{ backgroundColor: post.categories[0]?.color }}>{post.categories[0]?.name}</span></a>
               </Link>
             </div>}
             <div className="tt-col-value  hide-mobile">{post.reactionCount}</div>
             <div className="tt-col-value tt-color-select hide-mobile">{post.commentCount}</div>
             {/* <div className="tt-col-value  hide-mobile">12.6k</div> */}
-            <div className="tt-col-value hide-mobile">{formatDateTime(post.createdAt)}</div>
+            <div className="tt-col-value hide-mobile">
+              <div>{formatDateTime(post.createdAt, { dateFormat: "none" })}</div>
+              <small>{formatDateTime(post.createdAt, { timeFormat: "none" })}</small>
+            </div>
           </div>)}
 
           <LoginReminder />

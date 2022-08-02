@@ -189,6 +189,12 @@
   &-editor__editable_inline {
     min-height: 300px;
   }
+
+  &-content {
+    pre {
+      tab-size: 2;
+    }
+  }
 }
 
 .pt-commentor {

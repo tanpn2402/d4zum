@@ -120,6 +120,10 @@
 		padding-top: 21px;
 		color: black;
 
+		pre {
+			tab-size: 2;
+		}
+
 		blockquote {
 			overflow: hidden;
 			padding-right: 1.5em;
@@ -176,8 +180,13 @@
 		}
 
 		&.tt-item-description-comment {
-			img {
-				max-width: 50%;
+			.image {
+				text-align: left;
+
+				img {
+					max-width: 50%;
+				}
+
 			}
 		}
 
