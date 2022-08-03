@@ -3,7 +3,9 @@ function onLoad($) {
     delay_show_mm = 300,
     delay_hide_mm = 300;
 
-  $("body").append(getFullscreenBg());
+  if (!$(".mm-fullscreen-bg").length) {
+    $("body").append(getFullscreenBg());
+  }
   $.fn.initMM = function () {
     var mmpanel = {
       $mobilemenu: $(".panel-menu"),

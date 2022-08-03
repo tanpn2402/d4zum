@@ -91,7 +91,7 @@ type Props = {
   toolbar?: string[]
 }
 
-export default function initEditor (ClassicEditor: any, props: Props): Promise<any> {
+export default function initEditor(ClassicEditor: any, props: Props): Promise<any> {
   if (ClassicEditor) {
     return ClassicEditor
       .create(props.element, {
@@ -113,6 +113,7 @@ export default function initEditor (ClassicEditor: any, props: Props): Promise<a
           'italic',
           'underline',
           'link',
+          'code',
           'bulletedList',
           'numberedList',
           '|',
@@ -129,6 +130,45 @@ export default function initEditor (ClassicEditor: any, props: Props): Promise<a
           'undo',
           'redo'
         ],
+        image: {
+          styles: [
+            'alignCenter',
+            'alignLeft',
+            'alignRight'
+          ],
+          resizeOptions: [
+            {
+              name: 'resizeImage:original',
+              label: 'Original',
+              value: null
+            },
+            {
+              name: 'resizeImage:25',
+              label: '25%',
+              value: '25'
+            },
+            {
+              name: 'resizeImage:50',
+              label: '50%',
+              value: '50'
+            },
+            {
+              name: 'resizeImage:75',
+              label: '75%',
+              value: '75'
+            }
+          ],
+          toolbar: [
+            'imageTextAlternative', 'toggleImageCaption', '|',
+            'imageStyle:inline', 'imageStyle:wrapText', 'imageStyle:breakText', 'imageStyle:side', '|',
+            'resizeImage'
+          ],
+          insert: {
+            integrations: [
+              'insertImageViaUrl'
+            ]
+          }
+        },
         language: 'vi'
       })
   }
