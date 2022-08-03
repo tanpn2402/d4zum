@@ -39,7 +39,7 @@ export default async function handler(
       if (validateTokenResp.error) {
         res.redirect(302, "/login?error=PleaseRelogin");
       }
-      else {
+      else if (body.names.length > 0) {
         let resp = await create({
           names: body.names
         })
@@ -50,6 +50,9 @@ export default async function handler(
         else {
           res.status(500).send({ error: "InternalError" });
         }
+      }
+      else {
+        res.status(200).send({ data: [] as ITag[] });
       }
     }
     else {

@@ -105,20 +105,22 @@ export async function create({
   title,
   userId,
   categories,
-  tags
+  tags,
+  asDraft
 }: {
   userId: string
   title: string
   content: string
   categories?: string[]
   tags?: string[]
+  asDraft?: boolean
 }): Promise<IPost> {
   let resp = await graphQL<{
     post: {
       data: PostEntity
     }
   }>(
-    `mutation createPost($userId: ID, $content: String, $title: String, $slug: String, $categories: [ID], $tags: [ID]) {
+    `mutation createPost($userId: ID, $content: String, $title: String, $slug: String, $categories: [ID], $tags: [ID], $publishedAt: DateTime) {
       post: createPost(data: {
         user: $userId,
         title: $title,
@@ -129,14 +131,16 @@ export async function create({
         is_blocked: false,
         is_locked: false,
         is_pinned: false,
-        is_trending: false
-        publishedAt: "${new Date().toISOString()}"
+        is_trending: false,
+        publishedAt: $publishedAt
       }) {
         data {
           id
           attributes {
             slug
             title
+            createdAt
+            publishedAt
           }
         }
       }
@@ -147,7 +151,8 @@ export async function create({
       "title": title,
       "categories": categories,
       "tags": tags,
-      "slug": generateSlug(title, {})
+      "slug": generateSlug(title, {}),
+      "publishedAt": asDraft ? null : new Date().toISOString()
     }
   }, process.env.GRAPHQL_BEARER_TOKEN_WRITE)
 
@@ -159,6 +164,95 @@ export async function create({
   }
 }
 
+export async function update({
+  id,
+  content,
+  title,
+  userId,
+  categories,
+  tags,
+  slug,
+  publishedAt
+}: {
+  id: string
+  userId: string
+  title: string
+  content: string
+  categories?: string[]
+  tags?: string[],
+  slug?: string,
+  publishedAt?: string
+
+}): Promise<IPost> {
+  let resp = await graphQL<{
+    post: {
+      data: PostEntity
+    }
+  }>(
+    `mutation updatePost($id: ID!, $userId: ID, $content: String, $title: String, $categories: [ID], $tags: [ID], $slug: String, $publishedAt: DateTime) {
+      post: updatePost(id: $id, data: {
+        user: $userId,
+        title: $title,
+        content: $content,
+        categories: $categories,
+        tags: $tags,
+        publishedAt: $publishedAt
+        slug: $slug
+      }) {
+        data {
+          id
+          attributes {
+            slug
+            title
+            publishedAt
+          }
+        }
+      }
+    }`, {
+    variables: {
+      "id": id,
+      "userId": userId,
+      "content": content,
+      "title": title,
+      "categories": categories,
+      "tags": tags,
+      "slug": slug,
+      "publishedAt": publishedAt,
+    }
+  }, process.env.GRAPHQL_BEARER_TOKEN_WRITE)
+
+  if (!resp.errors) {
+    return UtilParser<IPost, PostEntity>(resp.data.post?.data)
+  }
+  else {
+    return null
+  }
+}
+
+export async function publish({
+  slug
+}: {
+  id?: string
+  slug: string
+}): Promise<IPost | null> {
+
+  let posts = await get({ slug, state: PublicationState.PREVIEW })
+  if (posts[0]) {
+    let resp = await update({
+      id: posts[0].id,
+      content: posts[0].content,
+      title: posts[0].title,
+      userId: posts[0].user?.id,
+      slug: posts[0].publishedAt === null ? generateSlug(posts[0].title, {}) : posts[0].slug,
+      publishedAt: posts[0].publishedAt === null ? new Date().toISOString() : null
+    })
+
+    return resp
+  }
+  else {
+    return null
+  }
+}
 
 const queryPostSchema = `query query($slug: String, $userId: ID, $state: PublicationState) {
   posts (

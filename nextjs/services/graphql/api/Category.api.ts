@@ -27,6 +27,9 @@ export async function get({
           }
         }
         sort: "createdAt:ASC"
+        pagination: {
+          limit: -1
+        }
       ) {
         data {
           id,

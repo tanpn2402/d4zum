@@ -23,6 +23,9 @@ export async function get({
           }
         }
         sort: "createdAt:ASC"
+        pagination: {
+          limit: -1
+        }
       ) {
         data {
           id,
@@ -51,18 +54,23 @@ export async function create({
   names: string[]
 }): Promise<ITag[] | null> {
   names = names.reduce((result: string[], el: string) => {
+    el = el.trim()
     if (!result.includes(el)) {
       result.push(el)
     }
     return result
   }, [])
+  if (names.length === 0) {
+    return [] as ITag[]
+  }
+
   let resp = await graphQL<{
     [key: string]: {
       data: TagEntity
     }
   }>(
     `mutation {
-      ${names.map(el => `tag${el}: createTag(data: {
+      ${names.map((el, index) => `tag${index}: createTag(data: {
         name: "${el}"
       }) {
         data {
@@ -71,9 +79,10 @@ export async function create({
       }`)}
     }`, {}, process.env.GRAPHQL_BEARER_TOKEN_WRITE)
 
+  console.log(resp);
   if (!resp.errors) {
-    return Object.keys(resp.data).map(el => {
-      let tag = resp.data[el]
+    return Object.keys(resp.data).map((_, index) => {
+      let tag = resp.data[`tag${index}`]
       return UtilParser<ITag, TagEntity>(tag.data)
     })
   }

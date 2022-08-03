@@ -195,6 +195,10 @@
       tab-size: 2;
     }
   }
+
+  &.ck-sticky-panel .ck-sticky-panel__content_sticky {
+    top: 70px !important;
+  }
 }
 
 .pt-commentor {

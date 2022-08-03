@@ -36,6 +36,9 @@ class MyDocument extends Document {
           {/* ckeditor */}
           <script src="/js/translations/vi.js"></script>
           <script src="/js/ckeditor.js"></script>
+
+          {/* perfect scrollbar */}
+          <script src="/js/perfect-scrollbar.min.js"></script>
         </body>
       </Html>
     )

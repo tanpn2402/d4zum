@@ -2,36 +2,27 @@
 import { getCookie } from "cookies-next"
 import type { NextApiRequest, NextApiResponse } from 'next'
 import JWT from "jsonwebtoken"
-import { create, update } from "@services/graphql/api/Post.api"
+import { publish } from "@services/graphql/api/Post.api"
 import IJwtAuthenticateData from "@interfaces/IJwtAuthenticateData"
 import IPost from "@interfaces/IPost"
 
 type Data = {
   error?: string,
-  data?: IPost[]
+  data?: IPost
 }
 
-type CreatePostReqBody = {
+type TogglePublishReqBody = {
   id?: string
-  title: string
-  content: string
-  categories: string[]
-  tags: string[]
-  asDraft?: boolean
+  slug: string
 }
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<Data>
 ) {
-  if (req.headers["content-type"] !== "application/json") {
-    res.status(405).send({ error: "MethodNotAllowed" });
-    return
-  }
-
-  if ((req.method === "POST" || req.method === "PUT")) {
-    const body: CreatePostReqBody = req.body;
-    console.log("Post", req.method, body);
+  if (req.method === "POST" && req.headers["content-type"] === "application/json") {
+    const body: TogglePublishReqBody = req.body;
+    console.log("Req create tag", body);
     const jwtToken = getCookie("jwt", { req, res })?.toString()
     if (jwtToken) {
       let validateTokenResp = await new Promise<{ error?: any, data?: IJwtAuthenticateData }>(async resolve => {
@@ -50,34 +41,12 @@ export default async function handler(
         res.redirect(302, "/login?error=PleaseRelogin");
       }
       else {
-        let resp: IPost;
-
-        if (req.method === "POST") {
-          if (body.asDraft) {
-            
-          }
-          resp = await create({
-            content: body.content,
-            title: body.title,
-            userId: validateTokenResp.data.id,
-            categories: body.categories,
-            tags: body.tags,
-            asDraft: body.asDraft
-          })
-        }
-        else {
-          resp = await update({
-            id: body.id,
-            content: body.content,
-            title: body.title,
-            userId: validateTokenResp.data.id,
-            categories: body.categories,
-            tags: body.tags
-          })
-        }
+        let resp = await publish({
+          slug: body.slug
+        })
 
         if (resp) {
-          res.status(200).send({ data: [resp] });
+          res.status(200).send({ data: resp });
         }
         else {
           res.status(500).send({ error: "InternalError" });

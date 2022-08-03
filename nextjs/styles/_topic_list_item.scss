@@ -201,6 +201,18 @@
 			.tt-icon {
 				width: 40px;
 				height: 40px;
+
+				&.js-post-settings-btn {
+					fill: #666f74;
+					transition: fill 0.2s linear;
+					width: 20px;
+					height: 20px;
+					cursor: pointer;
+
+					&:hover {
+						fill: #2172cd;
+					}
+				}
 			}
 
 			@media (min-width: 992px) {

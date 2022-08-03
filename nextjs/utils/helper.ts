@@ -7,13 +7,13 @@ export function generateUuid(template?: string) {
   return uuid
 }
 
-export function generateSlug(s: string, opt?: {
+export function generateSlug(s: string, opt: {
   delimiter?: string,
   limit?: number,
   lowercase?: boolean,
   replacements?: any,
   transliterate?: boolean
-}) {
+} = {}) {
   const defaultOpt = {
     'delimiter': '-',
     'limit': undefined,

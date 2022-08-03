@@ -36,7 +36,6 @@ export const getServerSideProps: GetServerSideProps<Props> = async (context) => 
   })
 
   const userData = await getByUsername(username)
-  console.log(userData);
   if (!userData || !userData.id) {
     return {
       redirect: {

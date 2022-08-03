@@ -3,12 +3,15 @@ import MobileMenu from "@components/MainHeader/mobile-menu"
 import SuggestedTopic from "@components/SuggestedTopic"
 import SvgSprite from "@components/SvgSprite"
 import IComment from "@interfaces/IComment"
+import IJwtAuthenticateData from "@interfaces/IJwtAuthenticateData"
 import IPost from "@interfaces/IPost"
 import IReaction from "@interfaces/IReaction"
 import { get as getPosts, getMeta as getPostMeta } from "@services/graphql/api/Post.api"
 import { formatDateTime } from "@utils/formatter"
 import { getCookies } from "cookies-next"
+import PublicationState from "enums/PublicationState"
 import ReactionType from "enums/ReactionType"
+import jwtDecode from "jwt-decode"
 import { GetServerSideProps, NextPage } from "next"
 import dynamic from "next/dynamic"
 import Head from "next/head"
@@ -70,10 +73,16 @@ const Topic: NextPage = ({
               <div className="tt-item-header">
                 <div className="tt-item-info info-top">
                   <div className="tt-avatar-icon">
-                    <i className="tt-icon"><svg><use xlinkHref={"#icon-ava-" + post.user?.name?.charAt?.(0)?.toLowerCase?.()} /></svg></i>
+                    <Link href={`/m/${post.user?.username}`}>
+                      <a>
+                        <i className="tt-icon"><svg><use xlinkHref={"#icon-ava-" + post.user?.name?.charAt?.(0)?.toLowerCase?.()} /></svg></i>
+                      </a>
+                    </Link>
                   </div>
                   <div className="tt-avatar-title">
-                    <a href="#">{post.user?.name}</a>
+                    <Link href={`/m/${post.user?.username}`}>
+                      <a>{post.user?.name}</a>
+                    </Link>
                   </div>
                   <a href="#" className="tt-info-time">
                     <i className="tt-icon"><svg><use xlinkHref="#icon-time" /></svg></i>{formatDateTime(post.createdAt)}
@@ -238,10 +247,16 @@ const Topic: NextPage = ({
                 <div className="tt-item-header pt-noborder">
                   <div className="tt-item-info info-top">
                     <div className="tt-avatar-icon">
-                      <i className="tt-icon"><svg><use xlinkHref={"#icon-ava-" + el.user?.name?.charAt?.(0)?.toLowerCase?.()} /></svg></i>
+                      <Link href={`/m/${el.user?.username}`}>
+                        <a>
+                          <i className="tt-icon"><svg><use xlinkHref={"#icon-ava-" + el.user?.name?.charAt?.(0)?.toLowerCase?.()} /></svg></i>
+                        </a>
+                      </Link>
                     </div>
                     <div className="tt-avatar-title">
-                      <a href="#">{el.user?.name}</a>
+                      <Link href={`/m/${el.user?.username}`}>
+                        <a>{el.user?.name}</a>
+                      </Link>
                     </div>
                     <a href="#" className="tt-info-time">
                       <i className="tt-icon"><svg><use xlinkHref="#icon-time" /></svg></i>{formatDateTime(el.createdAt)}
@@ -277,15 +292,19 @@ const Topic: NextPage = ({
             </div>
           })}
         </div>
-        {comments.length > 10 && <div className="tt-wrapper-inner">
-          <h4 className="tt-title-separator"><span>Bạn đã đến tận cùng của danh sách bình luận</span></h4>
-        </div>}
-        <br />
-        <div className="tt-topic-list">
-          <LoginReminder />
-        </div>
-        <CommentEditor post={post} onCreateCommentCB={() => handleRefreshComment()} />
-        <SuggestedTopic />
+
+        {/* post was published */}
+        {post?.publishedAt !== null && <>
+          {comments.length > 10 && <div className="tt-wrapper-inner">
+            <h4 className="tt-title-separator"><span>Bạn đã đến tận cùng của danh sách bình luận</span></h4>
+          </div>}
+          <br />
+          <div className="tt-topic-list">
+            <LoginReminder />
+          </div>
+          <CommentEditor post={post} onCreateCommentCB={() => handleRefreshComment()} />
+          <SuggestedTopic />
+        </>}
       </div>
     </main>
 
@@ -306,7 +325,7 @@ interface IQueryParams extends ParsedUrlQuery {
 export const getServerSideProps: GetServerSideProps<Props> = async (context) => {
   const { slug } = context.query as IQueryParams;
   const [posts, meta] = await Promise.all([
-    getPosts({ slug }),
+    getPosts({ slug, state: PublicationState.PREVIEW }),
     getPostMeta({ slug })
   ])
 
@@ -326,6 +345,17 @@ export const getServerSideProps: GetServerSideProps<Props> = async (context) => 
 
   if (posts[0].is_private) {
     if ((!cookies["jwt"] || !cookies["secret"])) {
+      return {
+        redirect: {
+          destination: '/private-post',
+          permanent: false,
+        },
+      }
+    }
+  }
+  if (posts[0].publishedAt === null) {
+    let jwtData: IJwtAuthenticateData = jwtDecode(cookies["jwt"].toString())
+    if (!(jwtData && jwtData.id === posts[0]?.user?.id)) {
       return {
         redirect: {
           destination: '/private-post',
