@@ -91,7 +91,7 @@ const Home: NextPage = ({
               </Link>
             </div>}
             <div className="tt-col-value  hide-mobile">{post.reactionCount}</div>
-            <div className="tt-col-value tt-color-select hide-mobile">{post.commentCount}</div>
+            <div className="tt-col-value hide-mobile">{post.commentCount}</div>
             {/* <div className="tt-col-value  hide-mobile">12.6k</div> */}
             <div className="tt-col-value hide-mobile">
               <div>{formatDateTime(post.createdAt, { dateFormat: "none" })}</div>

@@ -185,18 +185,18 @@ hr {
   }
 
   &.btn-primary {
-    background-color: #e2e7ea;
-    color: #182730;
+    background-color: var(--tt-btn-primary-bg);
+    color: var(--tt-btn-primary-color);
 
     &:hover {
-      background-color: #333333;
-      color: #ffffff;
+      background-color: var(--tt-btn-primary-bg__hover);
+      color: var(--tt-btn-primary-color__hover);
     }
   }
 
   &.btn-secondary {
-    background-color: #2172cd;
-    color: #ffffff;
+    background-color: var(--tt-btn-secondary-bg);
+    color: var(--tt-btn-secondary-color);
 
     &:hover {
       background-color: #333333;
@@ -483,7 +483,7 @@ hr {
 
 .tt-title-border {
   border-bottom: 1px solid $border;
-  color: #303344;
+  color: #303344 var(--tt-title-border-text-color);
   font-size: 18px;
   line-height: 26px;
   font-weight: 500;
@@ -683,7 +683,7 @@ hr {
 }
 
 .tt-wrapper-section {
-  background-color: #f2f4f6;
+  background-color: var(--tt-wrapper-section);
   position: relative;
 }
 

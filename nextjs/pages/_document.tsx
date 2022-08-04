@@ -22,23 +22,20 @@ class MyDocument extends Document {
           <meta name="twitter:card" content="summary" />
           <meta name="twitter:site" content="@d4zum" />
           <meta name="twitter:creator" content="@d4zum" />
-        </Head>
-        <body>
-          <Main />
-          <NextScript />
           {/* jquery */}
           <script src="/js/jquery-3.3.1.min.js" />
           {/* highlighjs */}
           <link rel="stylesheet" href="/css/hljs.default.min.css" />
           <script src="/js/highlight.min.js"></script>
-          {/* simple markdown editor */}
-          <script src="/js/simplemde.min.js"></script>
           {/* ckeditor */}
           <script src="/js/translations/vi.js"></script>
           <script src="/js/ckeditor.js"></script>
-
           {/* perfect scrollbar */}
           <script src="/js/perfect-scrollbar.min.js"></script>
+        </Head>
+        <body>
+          <Main />
+          <NextScript />
         </body>
       </Html>
     )

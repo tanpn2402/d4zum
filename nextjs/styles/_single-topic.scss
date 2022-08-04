@@ -8,7 +8,8 @@
 		}
 
 		&:not([class^="tt-wrapper-success"]) {
-			background-color: #ffffff;
+			// background-color: #ffffff;
+			background-color: var(--tt-thread-bg);
 		}
 
 		&.tt-wrapper-success {
@@ -118,7 +119,8 @@
 
 	.tt-item-description {
 		padding-top: 21px;
-		color: black;
+		// color: black;
+		color: var(--tt-item-description);
 
 		pre {
 			tab-size: 2;
@@ -344,7 +346,8 @@
 }
 
 .tt-info-box {
-	background-color: #ffffff;
+	// background-color: #ffffff;
+	background-color: var(--tt-info-box);
 
 	.tt-title {
 		color: $default_color2;

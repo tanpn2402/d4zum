@@ -1,0 +1,96 @@
+:root {
+  --bs-body-bg: #f8f9fb;
+  --bs-body-color: #666f74;
+
+  --tt-header-bg: #ffffff;
+  --tt-header-border-bottom-color: #e2e7ea;
+  --tt-header-link-color: #182730;
+
+  --tt-btn-primary-bg: #e2e7ea;
+  --tt-btn-primary-color: #182730;
+  --tt-btn-primary-bg__hover: #333333;
+  --tt-btn-primary-color__hover: #ffffff;
+
+  --tt-btn-secondary-bg: #2172cd;
+  --tt-btn-secondary-color: #ffffff;
+
+  --tt-list-header-color: #303344;
+  --tt-itemselect-bg: #f9efe3;
+  --tt-itemselect-border-bottom-color: $border02;
+  --tt-item-odd-bg: #f2f4f6;
+  --tt-item-even-bg: #ffffff;
+  --tt-color-select: #182730;
+
+  --tt-item-popup-bg: #1cbbb4;
+  --tt-item-popup-color: #ffffff;
+
+  --tt-thread-bg: #ffffff;
+  --tt-item-description: black;
+  --tt-info-box: #ffffff;
+
+  --tt-loginpage-bg: #ffffff;
+  --tt-loginpage-title-color: #303344;
+  --tt-loginpage-label-color: #dbd7d1;
+
+  --tt-wrapper-section: #f2f4f6;
+  --tt-user-header-title-color: #182730;
+
+  --tt-popup-setting-bg: #ffffff;
+  --tt-popup-setting-title-color: #303344;
+
+  --tt-title-border-text-color: #303344;
+
+  // CK editor
+  --ck-color-base-background: #e2e7ea;
+  --ck-color-base-border: transparent;
+  // --ck-border-radius: 0 !important;
+  // --ck-color-text: #ddd !important;
+  --ck-color-toolbar-background: #dbdbdb;
+  --ck-color-toolbar-border: transparent;
+  // --ck-color-split-button-hover-background: black !important;
+  // --ck-color-button-default-hover-background: black !important;
+  // --ck-color-dropdown-panel-background: black !important;
+  // --ck-color-dropdown-panel-border: black !important;
+  // --ck-color-button-on-background: black !important;
+  // --ck-color-button-on-hover-background: black !important;
+  // --ck-color-button-default-active-background: black !important;
+  // --ck-color-button-default-active-shadow: black !important;
+  // --ck-color-button-on-active-background: black !important;
+  // --ck-color-button-on-active-shadow: black !important;
+}
+
+$default_color_title: #303344;
+$default_color3: #f2f4f6;
+$default_color2: #182730;
+$default_color: #2172cd;
+$default_text: #303344;
+$border02: #e2e7ea;
+$border: #e2e7ea;
+
+.hljs {
+  background: #f3f3f3;
+  color: #444;
+
+  .hljs-section,
+  .hljs-title {
+    color: #800;
+  }
+
+  .hljs-addition,
+  .hljs-built_in,
+  .hljs-bullet,
+  .hljs-code {
+    color: #397300;
+  }
+
+  .hljs-deletion,
+  .hljs-number,
+  .hljs-quote,
+  .hljs-selector-class,
+  .hljs-selector-id,
+  .hljs-string,
+  .hljs-template-tag,
+  .hljs-type {
+    color: #800;
+  }
+}

@@ -29,18 +29,23 @@
 	3.18 Create Topic
 ---------------------------------------*/
 /* Colors */
-$default_color:                                     #2172cd;
-$default_color2:                                    #182730;
-$default_color3:                                    #f2f4f6;
-$default_color_title:								#303344;
-$default_color_title_hover:							$default_color;
-$default_text:										#303344;
-$border:                                            #666f74;
-$border02:                                          #e2e7ea;
+$default_color: #2172cd;
+$default_color2: #182730;
+$default_color3: #f2f4f6;
+$default_color_title: #303344;
+$default_color_title_hover: $default_color;
+$default_text: #303344;
+$border: #666f74;
+$border02: #e2e7ea;
 /*-------  1.1 Bootstrap  --------*/
 @import "variables";
 @import "../node_modules/bootstrap/scss/bootstrap-reboot";
 @import "../node_modules/bootstrap/scss/bootstrap-grid";
+
+/*-------  Themes                               --------*/
+@import "./themes/dark";
+// @import "./themes/light";
+
 /*-------  1.2 Magnific Popup  --------*/
 @import "../node_modules/magnific-popup/dist/magnific-popup.css";
 @import "_custom_magnific_popup";
@@ -86,12 +91,12 @@ $border02:                                          #e2e7ea;
 /*-------  3.13 Categories Singles               --------*/
 @import "_categories_single";
 /*-------  3.14 Layout Tab                      --------*/
-@import "_layout-tab.scss";
+@import "_layout-tab";
 /*-------  3.15 Layout404                       --------*/
-@import "_layout404.scss";
+@import "_layout404";
 /*-------  3.16 Followers List                  --------*/
-@import "_followers_list.scss";
+@import "_followers_list";
 /*-------  3.17 Messages Layout                 --------*/
-@import "_messages_layout.scss";
+@import "_messages_layout";
 /*-------  3.18 Create Topic                    --------*/
-@import "_btn-create-topic.scss";
+@import "_btn-create-topic";
