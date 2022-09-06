@@ -82,6 +82,11 @@
 						}
 					}
 				}
+
+				@media (max-width: 576px) {
+					flex-direction: column;
+					align-items: flex-start;
+				}
 			}
 		}
 
@@ -309,6 +314,8 @@
 	}
 
 	@media (max-width: 575px) {
+		padding-top: 10px;
+		
 		.tt-item-info.info-bottom {
 			display: flex;
 			flex-direction: row;

@@ -30,6 +30,7 @@ const CommentEditor = dynamic(() => import("@components/CommentEditor"), {
 const Topic: NextPage = ({
   post,
   reactions,
+  isPostOwner,
   comments: initalComments
 }: Props) => {
   const [comments, updateComments] = useState<IComment[]>(initalComments)
@@ -72,21 +73,28 @@ const Topic: NextPage = ({
             <div className="tt-single-topic">
               <div className="tt-item-header">
                 <div className="tt-item-info info-top">
-                  <div className="tt-avatar-icon">
-                    <Link href={`/m/${post.user?.username}`}>
-                      <a>
-                        <i className="tt-icon"><svg><use xlinkHref={"#icon-ava-" + post.user?.name?.charAt?.(0)?.toLowerCase?.()} /></svg></i>
-                      </a>
-                    </Link>
+                  <div className="d-flex align-items-center mb-2">
+                    <div className="tt-avatar-icon">
+                      <Link href={`/m/${post.user?.username}`}>
+                        <a>
+                          <i className="tt-icon"><svg><use xlinkHref={"#icon-ava-" + post.user?.name?.charAt?.(0)?.toLowerCase?.()} /></svg></i>
+                        </a>
+                      </Link>
+                    </div>
+                    <div className="tt-avatar-title">
+                      <Link href={`/m/${post.user?.username}`}>
+                        <a>{post.user?.name}</a>
+                      </Link>
+                    </div>
                   </div>
-                  <div className="tt-avatar-title">
-                    <Link href={`/m/${post.user?.username}`}>
-                      <a>{post.user?.name}</a>
-                    </Link>
+                  <div className="d-flex mb-2">
+                    <span className="tt-info-time">
+                      <i className="tt-icon"><svg><use xlinkHref="#icon-time" /></svg></i>{formatDateTime(post.createdAt)}
+                    </span>
+                    {isPostOwner && <Link href={`/edit-post?slug=${post?.slug}`}>
+                      <a className="ms-2">Sửa bài viết</a>
+                    </Link>}
                   </div>
-                  <a href="#" className="tt-info-time">
-                    <i className="tt-icon"><svg><use xlinkHref="#icon-time" /></svg></i>{formatDateTime(post.createdAt)}
-                  </a>
                 </div>
                 <h3 className="tt-item-title">
                   {post.title}
@@ -316,6 +324,7 @@ interface Props {
   post: IPost,
   comments?: IComment[],
   reactions?: IReaction[],
+  isPostOwner?: boolean
 }
 
 interface IQueryParams extends ParsedUrlQuery {
@@ -353,19 +362,20 @@ export const getServerSideProps: GetServerSideProps<Props> = async (context) => 
       }
     }
   }
-  if (posts[0].publishedAt === null) {
-    let jwtData: IJwtAuthenticateData = jwtDecode(cookies["jwt"].toString())
-    if (!(jwtData && jwtData.id === posts[0]?.user?.id)) {
-      return {
-        redirect: {
-          destination: '/private-post',
-          permanent: false,
-        },
-      }
+  let jwtData: IJwtAuthenticateData = jwtDecode(cookies["jwt"].toString())
+  let isPostOwner = jwtData && jwtData.id === posts[0]?.user?.id
+  if (posts[0].publishedAt === null && !isPostOwner) {
+    return {
+      redirect: {
+        destination: '/private-post',
+        permanent: false,
+      },
     }
   }
+
   return {
     props: {
+      isPostOwner,
       post: posts[0],
       comments: meta?.comments || [],
       reactions: meta?.reactions || []

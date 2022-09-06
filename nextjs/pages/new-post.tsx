@@ -26,12 +26,18 @@ const PageNewPost: NextPage<Props> = ({
   const [editor, setEditor] = useState<any>(null)
 
   useEffect(() => {
-
+    // init Editor
     (function (ClassicEditor) {
       if (ClassicEditor && !editor) {
         initEditor(ClassicEditor, {
           secret,
-          element: document.querySelector('.editor')
+          element: document.querySelector('.editor'),
+          autoSaveTimer: 5000,
+          onAutoSave: (data: string) => {
+            if (data?.trim?.() !== '') {
+              handleSaveAsDraft({ content: data });
+            }
+          }
         })
           .then((editor: any) => {
             setEditor(editor);
@@ -51,7 +57,10 @@ const PageNewPost: NextPage<Props> = ({
     )
   }, [])
 
-  const handleCreatePost = async ({ asDraft }: { asDraft: boolean } = { asDraft: false }) => {
+  const handleCreatePost = async ({
+    asDraft,
+    content
+  }: { asDraft: boolean, content?: string } = { asDraft: false }) => {
     (async function name($: any) {
       let formData = $("form").serializeArray().reduce((result: { [key: string]: any }, el: { name: string, value: string }) => {
         result[el.name] = el.value
@@ -90,7 +99,7 @@ const PageNewPost: NextPage<Props> = ({
           "body": JSON.stringify({
             "id": post?.id,
             "title": formData.title,
-            "content": editor.getData(),
+            "content": content || editor.getData(),
             "categories": formData.category !== "" ? [formData.category] : [],
             "tags": [...existTags, ...createTagResp.data.map((el: ITag) => el.id)],
             "asDraft": asDraft
@@ -149,8 +158,8 @@ const PageNewPost: NextPage<Props> = ({
     })
   }
 
-  const handleSaveAsDraft = async () => {
-    handleCreatePost({ asDraft: true })
+  const handleSaveAsDraft = async ({ content }: { content?: string }) => {
+    handleCreatePost({ asDraft: true, content })
   }
 
   return <>
@@ -255,9 +264,9 @@ const PageNewPost: NextPage<Props> = ({
                 <div className="col-md-4">
                   <div className="form-group">
                     <label htmlFor="inputTopicTitle">Chủ đề</label>
-                    <select className="form-control" name="category">
+                    <select className="form-control" name="category" defaultValue={post?.categories?.[0]?.id}>
                       <option value="">---</option>
-                      {categories?.map?.(el => <option key={el.id} value={el.id} selected={el.id === post?.categories?.[0]?.id}>
+                      {categories?.map?.(el => <option key={el.id} value={el.id}>
                         {el.name}
                       </option>)}
                     </select>
@@ -273,7 +282,7 @@ const PageNewPost: NextPage<Props> = ({
               </div>
               <div className="row">
                 <div className="col-auto ml-md-auto">
-                  <button type="button" className="btn btn-primary btn-width-lg me-2" onClick={() => handleSaveAsDraft()}>Lưu nháp</button>
+                  <button type="button" className="btn btn-primary btn-width-lg me-2" onClick={() => handleSaveAsDraft({})}>Lưu nháp</button>
 
                   {!post && <button type="button" className="btn btn-secondary btn-width-lg" onClick={() => handleCreatePost()}>Tạo mới</button>}
                   {post && <button type="button" className="btn btn-secondary btn-width-lg" onClick={() => handleCreatePost()}>Cập nhật</button>}

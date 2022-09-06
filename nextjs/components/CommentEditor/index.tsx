@@ -22,7 +22,10 @@ const CommentEditor = ({
           secret: getCookie("secret")?.toString?.(),
           element: document.querySelector('.editor'),
           toolbar: [
+            'link',
+            'code',
             'codeBlock',
+            'highlight',
             post.allow_comment_by_picture && 'imageInsert',
             '|',
             'undo',

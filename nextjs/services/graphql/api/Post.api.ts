@@ -205,6 +205,24 @@ export async function update({
             slug
             title
             publishedAt
+            tags {
+              data {
+                id
+                attributes {
+                  name
+                }
+              }
+            }
+            categories {
+              data {
+                id
+                attributes {
+                  slug
+                  name
+                  color
+                }
+              }
+            }
           }
         }
       }

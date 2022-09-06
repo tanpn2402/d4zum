@@ -88,7 +88,9 @@ const MyCustomUploadAdapterPlugin = (props: AdapterProps) => {
 type Props = {
   secret: string
   element: Element
-  toolbar?: string[]
+  toolbar?: string[],
+  autoSaveTimer?: number,
+  onAutoSave?: Function
 }
 
 export default function initEditor(ClassicEditor: any, props: Props): Promise<any> {
@@ -169,7 +171,16 @@ export default function initEditor(ClassicEditor: any, props: Props): Promise<an
             ]
           }
         },
-        language: 'vi'
+        language: 'vi',
+        autosave: {
+          waitingTime: props.autoSaveTimer || 0, // in ms
+          save(editor: any) {
+            if (props.onAutoSave) {
+              props.onAutoSave(editor.getData())
+            }
+          }
+        },
+
       })
   }
   else {

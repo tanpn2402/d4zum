@@ -384,6 +384,10 @@
 				fill: #CCC;
 			}
 		}
+
+		svg {
+			fill: var(--tt-header-link-color);
+		}
 	}
 }
 
