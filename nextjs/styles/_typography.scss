@@ -496,14 +496,14 @@ hr {
     Title separator
 */
 .tt-title-separator {
-  color: #666f74;
+  color: var(--tt-item-description);
   font-size: 16px;
   position: relative;
   text-align: center;
   margin-bottom: 37px;
 
   span {
-    background-color: $body-bg;
+    background-color: var(--bs-body-bg);
     position: relative;
     z-index: 2;
     display: inline-block;

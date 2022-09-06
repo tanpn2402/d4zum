@@ -2,7 +2,7 @@
     Mobile menu
 */
 $mobile_toggle_menu:											$default_color2;
-$mobile_menu_bg:												#ffffff;
+$mobile_menu_bg:												var(--tt-header-bg);
 $mobile_menu_fullscreen_bg:										rgba(0, 0, 0, 0.5);
 $mobile_menu_btn_text:											$default_color2;
 $mobile_menu_btn_text_hover:									$default_color;
