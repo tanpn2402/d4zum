@@ -1,3 +1,4 @@
+import CommentBlock from "@components/Comment/comment-block"
 import MainHeader from "@components/MainHeader"
 import MobileMenu from "@components/MainHeader/mobile-menu"
 import SuggestedTopic from "@components/SuggestedTopic"
@@ -23,7 +24,7 @@ const LoginReminder = dynamic(() => import("@components/LoginReminder"), {
   ssr: false
 })
 
-const CommentEditor = dynamic(() => import("@components/CommentEditor"), {
+const CommentEditor = dynamic(() => import("@components/Comment/comment-editor"), {
   ssr: false
 })
 
@@ -250,54 +251,7 @@ const Topic: NextPage = ({
             </div>
           </div>
           {comments?.map?.(el => {
-            return <div key={el.id} className="tt-item">
-              <div className="tt-single-topic">
-                <div className="tt-item-header pt-noborder">
-                  <div className="tt-item-info info-top">
-                    <div className="tt-avatar-icon">
-                      <Link href={`/m/${el.user?.username}`}>
-                        <a>
-                          <i className="tt-icon"><svg><use xlinkHref={"#icon-ava-" + el.user?.name?.charAt?.(0)?.toLowerCase?.()} /></svg></i>
-                        </a>
-                      </Link>
-                    </div>
-                    <div className="tt-avatar-title">
-                      <Link href={`/m/${el.user?.username}`}>
-                        <a>{el.user?.name}</a>
-                      </Link>
-                    </div>
-                    <a href="#" className="tt-info-time">
-                      <i className="tt-icon"><svg><use xlinkHref="#icon-time" /></svg></i>{formatDateTime(el.createdAt)}
-                    </a>
-                  </div>
-                </div>
-                <div className="tt-item-description tt-item-description-comment" dangerouslySetInnerHTML={{ __html: el.content }}></div>
-                <div className="tt-item-info info-bottom">
-                  {/* <a href="#" className="tt-icon-btn">
-                    <i className="tt-icon"><svg><use xlinkHref="#icon-like" /></svg></i>
-                    <span className="tt-text">{reactions.filter(el => el.type === ReactionType.LIKE).length}</span>
-                  </a>
-                  <a href="#" className="tt-icon-btn">
-                    <i className="tt-icon"><svg><use xlinkHref="#icon-dislike" /></svg></i>
-                    <span className="tt-text">{reactions.filter(el => el.type === ReactionType.DISLIKE).length}</span>
-                  </a>
-                  <a href="#" className="tt-icon-btn">
-                    <i className="tt-icon"><svg><use xlinkHref="#icon-favorite" /></svg></i>
-                    <span className="tt-text">{reactions.filter(el => el.type === ReactionType.LOVE).length}</span>
-                  </a> */}
-                  {/* <div className="col-separator" />
-                  <a href="#" className="tt-icon-btn tt-hover-02 tt-small-indent">
-                    <i className="tt-icon"><svg><use xlinkHref="#icon-share" /></svg></i>
-                  </a>
-                  <a href="#" className="tt-icon-btn tt-hover-02 tt-small-indent">
-                    <i className="tt-icon"><svg><use xlinkHref="#icon-flag" /></svg></i>
-                  </a>
-                  <a href="#" className="tt-icon-btn tt-hover-02 tt-small-indent">
-                    <i className="tt-icon"><svg><use xlinkHref="#icon-reply" /></svg></i>
-                  </a> */}
-                </div>
-              </div>
-            </div>
+            return <CommentBlock key={el.id} {...el} />
           })}
         </div>
 
@@ -362,16 +316,21 @@ export const getServerSideProps: GetServerSideProps<Props> = async (context) => 
       }
     }
   }
-  let jwtData: IJwtAuthenticateData = jwtDecode(cookies["jwt"].toString())
-  let isPostOwner = jwtData && jwtData.id === posts[0]?.user?.id
-  if (posts[0].publishedAt === null && !isPostOwner) {
-    return {
-      redirect: {
-        destination: '/private-post',
-        permanent: false,
-      },
+
+  let isPostOwner = false
+  if (cookies["jwt"]) {
+    let jwtData: IJwtAuthenticateData = jwtDecode(cookies["jwt"]?.toString?.())
+    isPostOwner = jwtData && jwtData.id === posts[0]?.user?.id
+    if (posts[0].publishedAt === null && !isPostOwner) {
+      return {
+        redirect: {
+          destination: '/private-post',
+          permanent: false,
+        },
+      }
     }
   }
+
 
   return {
     props: {
