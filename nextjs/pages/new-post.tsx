@@ -14,6 +14,7 @@ import ITag from "@interfaces/ITag"
 import { useRouter } from "next/router"
 import IPost from "@interfaces/IPost"
 import initEditor from "@components/Editor/init"
+import useStateRef from "@hooks/useStateRef"
 
 const PageNewPost: NextPage<Props> = ({
   secret,
@@ -21,114 +22,120 @@ const PageNewPost: NextPage<Props> = ({
   categories,
   post: initalPost
 }: Props) => {
+
   const router = useRouter()
-  const [post, updatePost] = useState(initalPost)
+  const [post, updatePost, postRef] = useStateRef<IPost>(initalPost)
   const [editor, setEditor] = useState<any>(null)
 
   useEffect(() => {
     // init Editor
-    (function (ClassicEditor) {
-      if (ClassicEditor && !editor) {
-        initEditor(ClassicEditor, {
-          secret,
-          element: document.querySelector('.editor'),
-          autoSaveTimer: 5000,
-          onAutoSave: (data: string) => {
-            if (data?.trim?.() !== '') {
-              handleSaveAsDraft({ content: data });
-            }
+    // @ts-ignore
+    const classicEditor = ClassicEditor
+    if (classicEditor && !editor) {
+      initEditor(classicEditor, {
+        secret,
+        element: document.querySelector('.editor'),
+        autoSaveTimer: 5000,
+        onAutoSave: handleAutoSave
+      })
+        .then((editor: any) => {
+          setEditor(editor);
+
+          if (post) {
+            editor.setData(post.content)
           }
         })
-          .then((editor: any) => {
-            setEditor(editor);
-
-            if (post) {
-              editor.setData(post.content)
-            }
-          })
-          .catch((error: any) => {
-            console.error('Oops, something went wrong!');
-            console.error(error);
-          });
-      }
-    })(
-      // @ts-ignore
-      ClassicEditor
-    )
+        .catch((error: any) => {
+          console.error('Oops, something went wrong!');
+          console.error(error);
+        });
+    }
   }, [])
+
+  const handleAutoSave = (data: string) => {
+    if (data?.trim?.() !== '') {
+      console.log(post);
+      handleSaveAsDraft({ content: data });
+    }
+  }
 
   const handleCreatePost = async ({
     asDraft,
     content
   }: { asDraft: boolean, content?: string } = { asDraft: false }) => {
-    (async function name($: any) {
-      let formData = $("form").serializeArray().reduce((result: { [key: string]: any }, el: { name: string, value: string }) => {
+    let formData = await (async function name($: any) {
+      return $("form").serializeArray().reduce((result: { [key: string]: any }, el: { name: string, value: string }) => {
         result[el.name] = el.value
         return result
       }, {});
-
-      let restTags: string[] = [],
-        existTags = formData.tags?.split(",")?.reduce?.((result: string[], el: string) => {
-          let t = tags.filter(tag => tag.name.toLowerCase() === el.toLowerCase())[0];
-          if (t) {
-            result.push(t.id)
-          }
-          else {
-            restTags.push(el)
-          }
-          return result
-        }, [])
-
-      let createTagResp: { success: boolean, data?: ITag[] }
-      if (!asDraft) {
-        createTagResp = await handleCreateTag(restTags)
-      }
-      else {
-        createTagResp = {
-          success: true,
-          data: []
-        }
-      }
-      if (createTagResp.success) {
-        fetch("/api/v1/post", {
-          "method": !post ? "POST" : "PUT",
-          "headers": {
-            "Content-Type": "application/json",
-            "Authorization": "Bearer " + secret
-          },
-          "body": JSON.stringify({
-            "id": post?.id,
-            "title": formData.title,
-            "content": content || editor.getData(),
-            "categories": formData.category !== "" ? [formData.category] : [],
-            "tags": [...existTags, ...createTagResp.data.map((el: ITag) => el.id)],
-            "asDraft": asDraft
-          })
-        })
-          .then(async resp => {
-            let json = await resp.json()
-            if (resp.status === 200) {
-              let data: IPost[] = json.data
-              if (!post && !asDraft) {
-                router.push("/p/" + data[0]?.slug)
-              }
-              else {
-                let newPost: IPost = data[0];
-                updatePost(newPost)
-              }
-            }
-            else {
-              throw json.error
-            }
-          })
-          .catch(error => {
-            console.log(error)
-          })
-      }
     })(
       // @ts-ignore
       $
     )
+
+    const post = postRef.current;
+
+    console.log(JSON.stringify(post));
+
+    let restTags: string[] = [],
+      existTags = formData.tags?.split(",")?.reduce?.((result: string[], el: string) => {
+        let t = tags.filter(tag => tag.name.toLowerCase() === el.toLowerCase())[0];
+        if (t) {
+          result.push(t.id)
+        }
+        else {
+          restTags.push(el)
+        }
+        return result
+      }, [])
+
+    let createTagResp: { success: boolean, data?: ITag[] }
+    if (!asDraft) {
+      createTagResp = await handleCreateTag(restTags)
+    }
+    else {
+      createTagResp = {
+        success: true,
+        data: []
+      }
+    }
+    if (createTagResp.success) {
+      fetch("/api/v1/post", {
+        "method": !post ? "POST" : "PUT",
+        "headers": {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + secret
+        },
+        "body": JSON.stringify({
+          "id": post?.id,
+          "title": formData.title,
+          "content": content || editor.getData(),
+          "categories": formData.category !== "" ? [formData.category] : [],
+          "tags": [...existTags, ...createTagResp.data.map((el: ITag) => el.id)],
+          "asDraft": asDraft
+        })
+      })
+        .then(async resp => {
+          let json = await resp.json()
+          if (resp.status === 200) {
+            let data: IPost[] = json.data
+            if (!post && !asDraft) {
+              router.push("/p/" + data[0]?.slug)
+            }
+            else {
+              let newPost: IPost = data[0];
+              console.log(newPost);
+              updatePost(newPost)
+            }
+          }
+          else {
+            throw json.error
+          }
+        })
+        .catch(error => {
+          console.log(error)
+        })
+    }
   }
 
   const handleCreateTag = async (tags: string[]): Promise<{ success: boolean, data?: ITag[] }> => {
@@ -158,7 +165,7 @@ const PageNewPost: NextPage<Props> = ({
     })
   }
 
-  const handleSaveAsDraft = async ({ content }: { content?: string }) => {
+  const handleSaveAsDraft = ({ content }: { content?: string }) => {
     handleCreatePost({ asDraft: true, content })
   }
 
