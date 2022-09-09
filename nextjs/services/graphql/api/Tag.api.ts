@@ -4,40 +4,51 @@ import UtilParser from "./UtilParser";
 import TagEntity from "@services/entity/Tag.entity";
 
 interface GetProps {
-  name?: string
+  name?: string | string[]
 }
 
 export async function get({
   name
 }: GetProps): Promise<ITag[] | null> {
+  let variables = {} as {
+    names: string[],
+    name: string
+  }
+  if (name) {
+    if (Array.isArray(name)) {
+      variables.names = name
+    }
+    else {
+      variables.name = name
+    }
+  }
   let resp = await graphQL<{
     tags: {
       data: TagEntity[]
     }
   }>(
-    `query query($name: String) {
+    `query query($names: [String], $name: String) {
       tags (
         filters: {
           name: {
+            in: $names,
             eq: $name
           }
         }
-        sort: "createdAt:ASC"
         pagination: {
           limit: -1
         }
       ) {
         data {
-          id,
+          id
           attributes {
             name
+            createdAt
           }
         }
       }
     }`, {
-    variables: {
-      "name": name
-    }
+    variables: variables
   })
 
   if (resp.data?.tags?.data) {

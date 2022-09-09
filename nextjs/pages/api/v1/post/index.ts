@@ -3,8 +3,10 @@ import { getCookie } from "cookies-next"
 import type { NextApiRequest, NextApiResponse } from 'next'
 import JWT from "jsonwebtoken"
 import { create, update } from "@services/graphql/api/Post.api"
+import { get as getTags, create as createTags } from "@services/graphql/api/Tag.api"
 import IJwtAuthenticateData from "@interfaces/IJwtAuthenticateData"
 import IPost from "@interfaces/IPost"
+import ITag from "@interfaces/ITag"
 
 type Data = {
   error?: string,
@@ -50,18 +52,46 @@ export default async function handler(
         res.redirect(302, "/login?error=PleaseRelogin");
       }
       else {
-        let resp: IPost;
+        let resp: IPost, tags = [] as ITag[];
+
+        if (body.tags && body.tags.length) {
+          const existedTags: ITag[] = await getTags({ name: body.tags.map(e => e.trim()) })
+          let restTags: string[] = []
+
+          body.tags.forEach(tag => {
+            let t = existedTags.filter(el => el.name.trim().toLowerCase() === tag.trim().toLowerCase())
+            if (t.length === 0) {
+              restTags.push(tag)
+            }
+            else {
+              tags = tags.concat(t)
+            }
+          })
+
+          if (restTags.length > 0) {
+            let t = await createTags({ names: restTags })
+            if (t) {
+              tags = tags.concat(t)
+            }
+          }
+        }
+
+        if (tags.length > 0) {
+          tags = tags.reduce((result: ITag[], tag) => {
+            if (result.filter(el => el.name.trim().toLowerCase() === tag.name.trim().toLowerCase()).length === 0) {
+              result.push(tag)
+            }
+            return result
+          }, [])
+        }
 
         if (req.method === "POST") {
-          if (body.asDraft) {
-            
-          }
           resp = await create({
             content: body.content,
             title: body.title,
             userId: validateTokenResp.data.id,
             categories: body.categories,
-            tags: body.tags,
+            tags: tags.map(e => e.id),
             asDraft: body.asDraft
           })
         }
@@ -72,7 +102,7 @@ export default async function handler(
             title: body.title,
             userId: validateTokenResp.data.id,
             categories: body.categories,
-            tags: body.tags
+            tags: tags.map(e => e.id),
           })
         }
 

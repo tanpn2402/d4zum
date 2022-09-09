@@ -2,13 +2,11 @@ import MainHeader from "@components/MainHeader"
 import MobileMenu from "@components/MainHeader/mobile-menu"
 import SvgSprite from "@components/SvgSprite"
 import ICategory from "@interfaces/ICategory"
-import IJwtAuthenticateData from "@interfaces/IJwtAuthenticateData"
 import { get as getCategories } from "@services/graphql/api/Category.api"
 import { getCookies } from "cookies-next"
 import type { GetServerSideProps, NextPage } from 'next'
 import Head from "next/head"
 import { useEffect, useState } from "react"
-import jwtDecode from "jwt-decode"
 import { get as getTags } from "@services/graphql/api/Tag.api"
 import ITag from "@interfaces/ITag"
 import { useRouter } from "next/router"
@@ -18,12 +16,13 @@ import useStateRef from "@hooks/useStateRef"
 
 const PageNewPost: NextPage<Props> = ({
   secret,
-  tags,
   categories,
   post: initalPost
 }: Props) => {
 
   const router = useRouter()
+  const [message, setMessage] = useState(null)
+  const [isLoading, setLoading] = useState(false)
   const [post, updatePost, postRef] = useStateRef<IPost>(initalPost)
   const [editor, setEditor] = useState<any>(null)
 
@@ -63,6 +62,11 @@ const PageNewPost: NextPage<Props> = ({
     asDraft,
     content
   }: { asDraft: boolean, content?: string } = { asDraft: false }) => {
+
+    if (isLoading) {
+      return
+    }
+
     let formData = await (async function name($: any) {
       return $("form").serializeArray().reduce((result: { [key: string]: any }, el: { name: string, value: string }) => {
         result[el.name] = el.value
@@ -72,102 +76,62 @@ const PageNewPost: NextPage<Props> = ({
       // @ts-ignore
       $
     )
-
+    setLoading(true)
+    setMessage(null)
     const post = postRef.current;
 
-    console.log(JSON.stringify(post));
-
-    let restTags: string[] = [],
-      existTags = formData.tags?.split(",")?.reduce?.((result: string[], el: string) => {
-        let t = tags.filter(tag => tag.name.toLowerCase() === el.toLowerCase())[0];
-        if (t) {
-          result.push(t.id)
+    fetch("/api/v1/post", {
+      "method": !post ? "POST" : "PUT",
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + secret
+      },
+      "body": JSON.stringify({
+        "id": post?.id,
+        "title": formData.title,
+        "content": content || editor.getData(),
+        "categories": formData.category !== "" ? [formData.category] : [],
+        "tags": formData.tags?.split(","),
+        "asDraft": asDraft
+      })
+    })
+      .then(async resp => {
+        let json = await resp.json()
+        if (resp.status === 200) {
+          let data: IPost[] = json.data
+          if (!post && !asDraft) {
+            router.push("/p/" + data[0]?.slug)
+          }
+          else {
+            let newPost: IPost = data[0]
+            updatePost(newPost)
+            setMessage("Lưu thành công nhé!")
+          }
         }
         else {
-          restTags.push(el)
+          throw json.error
         }
-        return result
-      }, [])
-
-    let createTagResp: { success: boolean, data?: ITag[] }
-    if (!asDraft) {
-      createTagResp = await handleCreateTag(restTags)
-    }
-    else {
-      createTagResp = {
-        success: true,
-        data: []
-      }
-    }
-    if (createTagResp.success) {
-      fetch("/api/v1/post", {
-        "method": !post ? "POST" : "PUT",
-        "headers": {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer " + secret
-        },
-        "body": JSON.stringify({
-          "id": post?.id,
-          "title": formData.title,
-          "content": content || editor.getData(),
-          "categories": formData.category !== "" ? [formData.category] : [],
-          "tags": [...existTags, ...createTagResp.data.map((el: ITag) => el.id)],
-          "asDraft": asDraft
-        })
       })
-        .then(async resp => {
-          let json = await resp.json()
-          if (resp.status === 200) {
-            let data: IPost[] = json.data
-            if (!post && !asDraft) {
-              router.push("/p/" + data[0]?.slug)
-            }
-            else {
-              let newPost: IPost = data[0];
-              console.log(newPost);
-              updatePost(newPost)
-            }
-          }
-          else {
-            throw json.error
-          }
-        })
-        .catch(error => {
-          console.log(error)
-        })
-    }
-  }
-
-  const handleCreateTag = async (tags: string[]): Promise<{ success: boolean, data?: ITag[] }> => {
-    return new Promise(resolve => {
-      fetch("/api/v1/post/tag", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          names: tags
-        })
+      .catch(error => {
+        console.log(error)
+        setMessage("Lưu thành lỗi rồi, thử lại xíu đi!")
       })
-        .then(async resp => {
-          let json = await resp.json();
-          if (resp.status === 200) {
-            resolve({ success: true, data: json.data })
-          }
-          else {
-            throw json.error
-          }
-        })
-        .catch(error => {
-          console.log(error)
-          resolve({ success: false })
-        })
-    })
+      .finally(() => {
+        setLoading(false)
+      })
   }
 
   const handleSaveAsDraft = ({ content }: { content?: string }) => {
     handleCreatePost({ asDraft: true, content })
   }
+
+  useEffect(() => {
+    if (message) {
+      setTimeout(() => {
+        setMessage(null)
+      }, 5000)
+    }
+  }, [message])
 
   return <>
     <Head>
@@ -291,8 +255,10 @@ const PageNewPost: NextPage<Props> = ({
                 <div className="col-auto ml-md-auto">
                   <button type="button" className="btn btn-primary btn-width-lg me-2" onClick={() => handleSaveAsDraft({})}>Lưu nháp</button>
 
-                  {!post && <button type="button" className="btn btn-secondary btn-width-lg" onClick={() => handleCreatePost()}>Tạo mới</button>}
-                  {post && <button type="button" className="btn btn-secondary btn-width-lg" onClick={() => handleCreatePost()}>Cập nhật</button>}
+                  {!post && <button type="button" disabled={isLoading} className="btn btn-secondary btn-width-lg" onClick={() => handleCreatePost()}>Tạo mới</button>}
+                  {post && <button type="button" disabled={isLoading} className="btn btn-secondary btn-width-lg" onClick={() => handleCreatePost()}>Cập nhật</button>}
+                  {isLoading && <span className="ms-4"><img width="40" src="/images/svg/disk-spin.svg" /></span>}
+                  {message && <span className="ms-4">{message}</span>}
                 </div>
               </div>
             </div>
@@ -304,10 +270,6 @@ const PageNewPost: NextPage<Props> = ({
     <SvgSprite />
   </>
 }
-
-// secret,
-//   tags,
-//   categories
 
 type Props = {
   secret?: string,
@@ -335,7 +297,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async (context) => 
     getTags({})
   ])
 
-  let jwtData: IJwtAuthenticateData = jwtDecode(cookies["jwt"].toString())
+  console.log(tags);
 
   return {
     props: {
