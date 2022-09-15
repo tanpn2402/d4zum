@@ -36,6 +36,7 @@ class MyDocument extends Document {
         <body>
           <Main />
           <NextScript />
+          <script src="/js/chatwood.js"></script>
         </body>
       </Html>
     )
