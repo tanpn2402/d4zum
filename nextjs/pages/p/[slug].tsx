@@ -17,6 +17,7 @@ import { GetServerSideProps, NextPage } from "next"
 import dynamic from "next/dynamic"
 import Head from "next/head"
 import Link from "next/link"
+import { useRouter } from "next/router"
 import { ParsedUrlQuery } from "querystring"
 import { useEffect, useState } from "react"
 
@@ -30,11 +31,16 @@ const CommentEditor = dynamic(() => import("@components/Comment/comment-editor")
 
 const Topic: NextPage = ({
   post,
-  reactions,
+  jwtData,
   isPostOwner,
-  comments: initalComments
+  comments: initialComments,
+  reactions: initialReactions,
+  myReaction: initialMyReaction,
 }: Props) => {
-  const [comments, updateComments] = useState<IComment[]>(initalComments)
+  const router = useRouter()
+  const [comments, updateComments] = useState<IComment[]>(initialComments)
+  const [reactions, updateReactions] = useState<IReaction[]>(initialReactions)
+  const [myReaction, updateMyReaction] = useState<IReaction>(initialMyReaction)
 
   useEffect(() => {
     ((function (hljs) {
@@ -52,6 +58,65 @@ const Topic: NextPage = ({
     if (resp?.comments) {
       updateComments(resp?.comments)
     }
+  }
+
+  const handleReaction = async (event: any, type: ReactionType) => {
+    event.preventDefault()
+    if (jwtData === null) {
+      router.push("/login?error=PleaseRelogin")
+    }
+    else {
+      fetch("/api/v1/post/reaction", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          postId: post.id,
+          type: type
+        })
+      })
+        .then(async resp => {
+          let json: {
+            error: any
+            data: IReaction[]
+          } = await resp.json();
+          if (resp.status === 200) {
+            handleUpdateReactionCount()
+          }
+          else {
+            throw json.error
+          }
+        })
+        .catch(error => {
+          console.log(error)
+        })
+    }
+  }
+
+  const handleUpdateReactionCount = async () => {
+    fetch("/api/v1/post/reaction?postId=" + post.id, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json"
+      }
+    })
+      .then(async resp => {
+        let json: {
+          error: any
+          data: IReaction[]
+        } = await resp.json();
+        if (resp.status === 200) {
+          updateReactions(json.data)
+          updateMyReaction(json.data?.filter(reaction => reaction.user?.id === jwtData?.id)[0])
+        }
+        else {
+          throw json.error
+        }
+      })
+      .catch(error => {
+        console.log(error)
+      })
   }
 
   return <>
@@ -118,17 +183,23 @@ const Topic: NextPage = ({
               </div>
               <div className="tt-item-description" dangerouslySetInnerHTML={{ __html: post.content }}></div>
               <div className="tt-item-info info-bottom">
-                <a href="#" className="tt-icon-btn">
+                <a href="#" className={"tt-icon-btn " + (myReaction?.type === ReactionType.LIKE ? "active" : "")}
+                  onClick={ev => handleReaction(ev, ReactionType.LIKE)}>
                   <i className="tt-icon"><svg><use xlinkHref="#icon-like" /></svg></i>
-                  <span className="tt-text">{reactions.filter(el => el.type === ReactionType.LIKE).length}</span>
+                  <span className="tt-text">+{reactions.filter(el => el.type === ReactionType.LIKE).length}</span>
+                  <span className="tt-text ms-2">hữu ích</span>
                 </a>
-                <a href="#" className="tt-icon-btn">
+                <a href="#" className={"tt-icon-btn " + (myReaction?.type === ReactionType.DISLIKE ? "active" : "")}
+                  onClick={ev => handleReaction(ev, ReactionType.DISLIKE)}>
                   <i className="tt-icon"><svg><use xlinkHref="#icon-dislike" /></svg></i>
-                  <span className="tt-text">{reactions.filter(el => el.type === ReactionType.DISLIKE).length}</span>
+                  <span className="tt-text">+{reactions.filter(el => el.type === ReactionType.DISLIKE).length}</span>
+                  <span className="tt-text ms-2">an ủi</span>
                 </a>
-                <a href="#" className="tt-icon-btn">
+                <a href="#" className={"tt-icon-btn " + (myReaction?.type === ReactionType.LOVE ? "active" : "")}
+                  onClick={ev => handleReaction(ev, ReactionType.LOVE)}>
                   <i className="tt-icon"><svg><use xlinkHref="#icon-favorite" /></svg></i>
-                  <span className="tt-text">{reactions.filter(el => el.type === ReactionType.LOVE).length}</span>
+                  <span className="tt-text">+{reactions.filter(el => el.type === ReactionType.LOVE).length}</span>
+                  <span className="tt-text ms-2">tim</span>
                 </a>
                 <div className="col-separator" />
                 {/* <a href="#" className="tt-icon-btn tt-hover-02 tt-small-indent">
@@ -278,7 +349,9 @@ interface Props {
   post: IPost,
   comments?: IComment[],
   reactions?: IReaction[],
-  isPostOwner?: boolean
+  myReaction?: IReaction,
+  isPostOwner?: boolean,
+  jwtData?: IJwtAuthenticateData
 }
 
 interface IQueryParams extends ParsedUrlQuery {
@@ -317,9 +390,9 @@ export const getServerSideProps: GetServerSideProps<Props> = async (context) => 
     }
   }
 
-  let isPostOwner = false
+  let isPostOwner = false, myReaction: IReaction = null, jwtData: IJwtAuthenticateData = null
   if (cookies["jwt"]) {
-    let jwtData: IJwtAuthenticateData = jwtDecode(cookies["jwt"]?.toString?.())
+    jwtData = jwtDecode(cookies["jwt"]?.toString?.())
     isPostOwner = jwtData && jwtData.id === posts[0]?.user?.id
     if (posts[0].publishedAt === null && !isPostOwner) {
       return {
@@ -329,11 +402,16 @@ export const getServerSideProps: GetServerSideProps<Props> = async (context) => 
         },
       }
     }
+    if (jwtData.id) {
+      myReaction = meta?.reactions?.filter?.(reaction => reaction.user?.id === jwtData.id)[0] ?? null
+    }
   }
 
 
   return {
     props: {
+      jwtData,
+      myReaction,
       isPostOwner,
       post: posts[0],
       comments: meta?.comments || [],

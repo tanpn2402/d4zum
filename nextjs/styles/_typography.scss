@@ -479,6 +479,23 @@ hr {
       }
     }
   }
+
+  // active
+  &.active {
+    .tt-text {
+      color: $default_color;
+    }
+
+    .tt-icon {
+      svg {
+        fill: $default_color;
+
+        path {
+          fill: $default_color;
+        }
+      }
+    }
+  }
 }
 
 .tt-title-border {

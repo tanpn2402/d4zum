@@ -1,6 +1,6 @@
 enum ReactionType {
   "LIKE" = "LIKE",
-  "DISLIKE" = "LIKE",
+  "DISLIKE" = "DISLIKE",
   "LOVE" = "LOVE"
 }
 
