@@ -5,7 +5,9 @@ interface IChatConfig {
   url: String,
   srcPath: String,
   token: String,
-  provider?: String
+  provider?: String,
+  type?: String,
+  launcherTitle?: String
 }
 
 export default async function handler(
@@ -16,6 +18,8 @@ export default async function handler(
     url: process.env.EXTENSION_CHAT_URL,
     srcPath: process.env.EXTENSION_CHAT_SRC_PATH,
     token: process.env.EXTENSION_CHAT_TOKEN,
+    type: process.env.EXTENSION_CHAT_TYPE,
+    launcherTitle: process.env.EXTENSION_CHAT_LAUNCHER_TITLE,
   }
 
   if (config && config.url) {
