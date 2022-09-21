@@ -265,6 +265,7 @@
 				a {
 					color: $default_color_title;
 					transition: color .2s linear;
+					white-space: break-spaces;
 
 					&:hover {
 						color: $default_color_title_hover;
@@ -510,6 +511,30 @@
 	.hide-mobile {
 		@media (max-width: 991px) {
 			display: none;
+		}
+	}
+
+	// notification list
+	&.tt-notification-list {
+		overflow-y: auto;
+    max-height: 50vh;
+
+		.tt-item {
+			min-height: auto;
+			padding: 10px 5px;
+
+			.tt-title a {
+				font-size: 14px;
+				line-height: initial;
+
+				&:hover {
+					line-height: initial;
+				}
+			}
+
+			.no-gutters small {
+				font-size: 10px;
+			}
 		}
 	}
 }

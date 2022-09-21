@@ -8,6 +8,7 @@ interface UserAttribute<IPicture> extends BaseAttribute {
   picture?: IPicture
   provider: string
   username: string
+  phoneNumber?: string
 }
 
 export default UserAttribute
