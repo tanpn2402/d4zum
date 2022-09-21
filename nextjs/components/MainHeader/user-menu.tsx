@@ -61,7 +61,10 @@ const UserNotification = () => {
   const [wsUrl, setWsUrl] = useState(null)
   const [wsToken, setWsToken] = useState(null)
   const [isPanelOpen, togglePanel] = useState(false)
+  const [isPreviewPanelOpen, togglePreviewPanel] = useState(false)
   const [messages, updateMessages, messageRef] = useStateRef<any[]>([])
+  const [newestMessage, updateNewestMessage] = useState(null)
+
   useOnOutsideClick(ref, () => togglePanel(false))
 
   useEffect(() => {
@@ -141,19 +144,41 @@ const UserNotification = () => {
         }
         else if (json.message?.event === 'message.created') {
           // new message
-          updateMessages(messageRef.current.concat([
-            json.message?.data
-          ]))
-        } else {
+          updateMessages(
+            [json.message?.data].concat(messageRef.current)
+          )
+
+          updateNewestMessage(json.message?.data)
+        }
+        else {
           // ignore other messages
         }
       };
     }
   }, [wsToken, wsUrl])
 
+  useEffect(() => {
+    let interval: any
+    if (newestMessage) {
+      togglePreviewPanel(true)
+      interval = setInterval(() => {
+        updateNewestMessage(null)
+        togglePreviewPanel(false)
+      }, 5000)
+    }
+    return () => {
+      if (interval) {
+        clearInterval(interval)
+      }
+    }
+  }, [newestMessage])
+
   return <>
     <div className="tt-item-action" ref={ref}>
-      <span className="tt-btn-icon pe-2" onClick={() => togglePanel(!isPanelOpen)}>
+      <span className="tt-btn-icon pe-2" onClick={() => {
+        togglePanel(!isPanelOpen)
+        togglePreviewPanel(false)
+      }}>
         <i className="tt-icon">
           <svg style={{ width: 28, fontStyle: "normal" }}>
             <text x="5" y="15">{messages.length}</text>
@@ -170,7 +195,18 @@ const UserNotification = () => {
               </div>
             </div>
           </div> :
-            [].concat(messages).reverse().map(mes => <NotificationItem data={mes} key={mes.id} />)}
+            messages.map(mes => <NotificationItem data={mes} key={mes.id} />)}
+        </div>
+      </div>}
+      {!isPanelOpen && isPreviewPanelOpen && newestMessage && <div className="tt-item-action-alert tt-item-notification">
+        <div className="tt-topic-list tt-notification-list">
+          <div className="tt-item">
+            <div className="tt-col-description">
+              <div className="tt-title">
+                <NotificationItem data={newestMessage} key={newestMessage.id} />
+              </div>
+            </div>
+          </div>
         </div>
       </div>}
     </div>
@@ -189,7 +225,11 @@ const NotificationItem = React.memo(({ data }: { data: any }) => {
   return <div className="tt-item">
     <div className="tt-col-description">
       <div className="tt-title">
-        <a className="p-0" href={actionHref}>
+        <a className="p-0" href={actionHref} onClick={ev => {
+          if (actionHref === "#") {
+            ev.preventDefault()
+          }
+        }}>
           {content}
         </a>
       </div>

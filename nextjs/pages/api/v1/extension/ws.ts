@@ -4,7 +4,7 @@ import IUser from "@interfaces/IUser";
 import { getCookie } from "cookies-next";
 import jwtDecode from "jwt-decode";
 import ws from "lib/ws"
-import { EWSError } from "lib/ws/interfaces";
+import { EWSError } from "lib/ws/enum";
 import type { NextApiRequest, NextApiResponse } from 'next'
 
 interface IWebsocket {
@@ -35,7 +35,7 @@ export default async function handler(
           data: {
             topic: {
               id: topic.id,
-              messages: topic.messages
+              messages: topic.messages.filter(mes => mes.content_attributes.deleted !== true).reverse()
             },
             url: pubsub.url,
             source_id: pubsub.source_id,

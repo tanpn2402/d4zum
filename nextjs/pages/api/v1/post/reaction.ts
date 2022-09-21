@@ -6,6 +6,8 @@ import IJwtAuthenticateData from "@interfaces/IJwtAuthenticateData"
 import { get, remove, create } from "@services/graphql/api/Reaction.api"
 import ReactionType from "enums/ReactionType"
 import IReaction from "@interfaces/IReaction"
+import ws from "lib/ws"
+import WsEvent from "enums/WsEvent"
 
 type Data = {
   error?: string,
@@ -74,6 +76,20 @@ export default async function handler(
 
           if (createReactionResp) {
             res.status(200).send({ data: [createReactionResp] });
+
+            // send notification
+            ws?.sendNotification?.({
+              content: JSON.stringify({
+                event: WsEvent.POST_REACTION,
+                value: createReactionResp.type,
+                content: `${createReactionResp.user.name} đã tương tác với bài viết của bạn`,
+                href: `/p/${createReactionResp.post.slug}`
+              }),
+              targetUserEmail: createReactionResp.post?.user?.email,
+              id: null,
+              topic_id: null,
+              account_id: null
+            })
           }
           else {
             res.status(500).send({ error: "InternalError" });

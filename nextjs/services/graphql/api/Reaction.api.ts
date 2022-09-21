@@ -11,7 +11,8 @@ export function parseReaction(reaction: ReactionEntity): IReaction {
     post: reaction => ({
       id: reaction.attributes.post?.data?.id,
       title: reaction.attributes.post?.data?.attributes?.title,
-      slug: reaction.attributes.post?.data?.attributes?.slug
+      slug: reaction.attributes.post?.data?.attributes?.slug,
+      user: parseUser(reaction.attributes.user.data)
     }) as IPost
   })
 }
@@ -28,6 +29,7 @@ const REACTION_DATA = `data  {
           attributes {
             username
             name
+            email
             picture {
               data {
                 id
@@ -45,6 +47,16 @@ const REACTION_DATA = `data  {
           attributes {
             title
             slug
+            user {
+              data {
+                id
+                attributes {
+                  username
+                  name
+                  email
+                }
+              }
+            }
           }
         }
       }

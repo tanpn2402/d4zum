@@ -5,6 +5,8 @@ import JWT from "jsonwebtoken"
 import { create } from "@services/graphql/api/Comment.api"
 import IJwtAuthenticateData from "@interfaces/IJwtAuthenticateData"
 import IComment from "@interfaces/IComment"
+import ws from "lib/ws"
+import WsEvent from "enums/WsEvent"
 
 type Data = {
   error?: string,
@@ -50,6 +52,20 @@ export default async function handler(
 
         if (resp) {
           res.status(200).send({ data: resp });
+
+          // send notification
+          ws?.sendNotification?.({
+            content: JSON.stringify({
+              event: WsEvent.COMMENT_CREATED,
+              value: resp.id,
+              content: `${resp.user.name} đã bình luận bài viết của bạn`,
+              href: `/p/${resp.post.slug}`
+            }),
+            targetUserEmail: resp.post?.user?.email,
+            id: null,
+            topic_id: null,
+            account_id: null
+          })
         }
         else {
           res.status(500).send({ error: "InternalError" });

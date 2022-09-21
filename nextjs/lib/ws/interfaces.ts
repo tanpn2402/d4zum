@@ -5,9 +5,16 @@ interface IWSError {
   error_code?: string
 }
 
-interface IPubSubToken extends IWSError {
-  pubsub_token: string
+interface IWSUser extends IWSError {
   source_id: string
+  email?: string
+  name?: string
+  phone_number?: string
+  id?: string
+}
+
+interface IPubSubToken extends IWSError, IWSUser {
+  pubsub_token: string
   url: string
 }
 
@@ -16,22 +23,26 @@ interface ITopic extends IWSError {
   messages?: any[]
 }
 
+interface IWSNotification extends IWSError {
+  id: string
+  topic_id: string
+  account_id?: string     // agent/admin account-id
+  content: string
+  targetUserEmail: string
+}
+
 interface IWebsocket {
+  getUserToken(email: string): Promise<IWSUser>
   getPubsubToken(user?: IUser): Promise<IPubSubToken>
   getTopic(source_id?: string): Promise<ITopic>
   join(source_id?: string): Promise<ITopic>
-}
-
-enum EWSError {
-  NO_TOPIC = "NO_TOPIC"
+  sendNotification(message: IWSNotification): Promise<IWSNotification>
 }
 
 export type {
   IWebsocket,
   IPubSubToken,
-  ITopic
-}
-
-export {
-  EWSError
+  ITopic,
+  IWSNotification,
+  IWSUser
 }

@@ -1,10 +1,20 @@
 import IComment from "@interfaces/IComment";
+import IPost from "@interfaces/IPost";
 import CommentEntity from "@services/entity/Comment.entity";
 import graphQL from "./api";
+import { parseUser } from "./User.api";
 import UtilParser from "./UtilParser";
 
 export function parseComment(comment: CommentEntity): IComment {
-  return UtilParser<IComment, CommentEntity>(comment)
+  return UtilParser<IComment, CommentEntity>(comment, {
+    user: reaction => parseUser(reaction.attributes.user.data),
+    post: reaction => ({
+      id: reaction.attributes.post?.data?.id,
+      title: reaction.attributes.post?.data?.attributes?.title,
+      slug: reaction.attributes.post?.data?.attributes?.slug,
+      user: parseUser(reaction.attributes.user.data)
+    }) as IPost
+  })
 }
 
 interface CommentInputProps {
@@ -34,6 +44,35 @@ export async function create({
           attributes {
             is_blocked
             content
+            user {
+              data {
+                id
+                attributes {
+                  username
+                  name
+                  email
+                }
+              }
+            }
+            post {
+              data {
+                id
+                attributes {
+                  title
+                  slug
+                  user {
+                    data {
+                      id
+                      attributes {
+                        username
+                        name
+                        email
+                      }
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
