@@ -287,7 +287,7 @@ const queryPostSchema = `query query($slug: String, $userId: ID, $state: Publica
     pagination: {
       limit: -1
     }
-    sort: "is_pinned:DESC,createdAt:ASC"
+    sort: "is_pinned:DESC,createdAt:DESC"
     publicationState: $state
   ) {
     data {
