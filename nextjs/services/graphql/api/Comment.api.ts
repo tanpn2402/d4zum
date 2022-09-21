@@ -12,7 +12,7 @@ export function parseComment(comment: CommentEntity): IComment {
       id: reaction.attributes.post?.data?.id,
       title: reaction.attributes.post?.data?.attributes?.title,
       slug: reaction.attributes.post?.data?.attributes?.slug,
-      user: parseUser(reaction.attributes.user.data)
+      user: parseUser(reaction.attributes.post?.data?.attributes?.user?.data)
     }) as IPost
   })
 }

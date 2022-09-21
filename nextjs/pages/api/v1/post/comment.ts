@@ -1,12 +1,11 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
-import { deleteCookie, getCookie, setCookie } from "cookies-next"
-import type { NextApiRequest, NextApiResponse } from 'next'
-import JWT from "jsonwebtoken"
+import type { NextApiResponse } from 'next'
 import { create } from "@services/graphql/api/Comment.api"
-import IJwtAuthenticateData from "@interfaces/IJwtAuthenticateData"
 import IComment from "@interfaces/IComment"
-import ws from "lib/ws"
 import WsEvent from "enums/WsEvent"
+import withJwt from "@lib/http/helpers/withJwt"
+import { IApiRequest } from "@lib/http/interfaces"
+import withWs from "@lib/http/helpers/withWs"
 
 type Data = {
   error?: string,
@@ -18,65 +17,45 @@ type CreateCommentReqBody = {
   postId: string
 }
 
-export default async function handler(
-  req: NextApiRequest,
+async function handler(
+  req: IApiRequest,
   res: NextApiResponse<Data>
 ) {
   if (req.method === "POST" && req.headers["content-type"] === "application/json") {
     const body: CreateCommentReqBody = req.body;
     console.log("Req create comment", body);
-    const jwtToken = getCookie("jwt", { req, res })?.toString()
-    if (jwtToken) {
-      let validateTokenResp = await new Promise<{ error?: any, data?: IJwtAuthenticateData }>(async resolve => {
-        JWT.verify(jwtToken, process.env.JWT_SECRET_KEY, async function (error, decoded: IJwtAuthenticateData) {
-          if (error) {
-            console.error(error);
-            resolve({ error })
-          }
-          else {
-            resolve({ data: decoded })
-          }
-        });
-      })
 
-      if (validateTokenResp.error) {
-        res.redirect(302, "/login?error=PleaseRelogin");
-      }
-      else {
-        let resp = await create({
-          userId: validateTokenResp.data.id,
-          content: body.content,
-          postId: body.postId,
-          is_blocked: false
-        })
+    let resp = await create({
+      userId: req.jwt.id,
+      content: body.content,
+      postId: body.postId,
+      is_blocked: false
+    })
 
-        if (resp) {
-          res.status(200).send({ data: resp });
+    if (resp) {
+      res.status(200).send({ data: resp })
 
-          // send notification
-          ws?.sendNotification?.({
-            content: JSON.stringify({
-              event: WsEvent.COMMENT_CREATED,
-              value: resp.id,
-              content: `${resp.user.name} đã bình luận bài viết của bạn`,
-              href: `/p/${resp.post.slug}`
-            }),
-            targetUserEmail: resp.post?.user?.email,
-            id: null,
-            topic_id: null,
-            account_id: null
-          })
-        }
-        else {
-          res.status(500).send({ error: "InternalError" });
+      // send notification
+      if (resp.post?.user?.email !== resp.user.email) {
+        req.wsData = {
+          event: WsEvent.COMMENT_CREATED,
+          value: resp
         }
       }
     }
     else {
-      res.redirect(302, "/login?error=PleaseRelogin");
+      res.status(500).send({ error: "InternalError" });
     }
   }
   else {
     res.status(405).send({ error: "MethodNotAllowed" });
   }
 }
+
+export const config = {
+  api: {
+    externalResolver: true,
+  },
+}
+
+export default withJwt(withWs(handler))

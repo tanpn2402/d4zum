@@ -1,13 +1,12 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
-import { getCookie } from "cookies-next"
-import type { NextApiRequest, NextApiResponse } from 'next'
-import JWT from "jsonwebtoken"
-import IJwtAuthenticateData from "@interfaces/IJwtAuthenticateData"
+import type { NextApiResponse } from 'next'
 import { get, remove, create } from "@services/graphql/api/Reaction.api"
 import ReactionType from "enums/ReactionType"
 import IReaction from "@interfaces/IReaction"
-import ws from "lib/ws"
 import WsEvent from "enums/WsEvent"
+import withJwt from "@lib/http/helpers/withJwt"
+import withWs from "@lib/http/helpers/withWs"
+import { IApiRequest } from "@lib/http/interfaces"
 
 type Data = {
   error?: string,
@@ -19,89 +18,59 @@ type ToggleReactionReqBody = {
   postId: string
 }
 
-export default async function handler(
-  req: NextApiRequest,
+async function handler(
+  req: IApiRequest,
   res: NextApiResponse<Data>
 ) {
   if (req.method === "POST" && req.headers["content-type"] === "application/json") {
     const body: ToggleReactionReqBody = req.body;
     console.log("Req toggle reaction", body);
-    const jwtToken = getCookie("jwt", { req, res })?.toString()
-    if (jwtToken) {
-      let validateTokenResp = await new Promise<{ error?: any, data?: IJwtAuthenticateData }>(async resolve => {
-        JWT.verify(jwtToken, process.env.JWT_SECRET_KEY, async function (error, decoded: IJwtAuthenticateData) {
-          if (error) {
-            console.error(error);
-            resolve({ error })
-          }
-          else {
-            resolve({ data: decoded })
-          }
-        });
+    let reactions = await get({
+      // @ts-ignore
+      user: { id: req.jwt.id },
+      // @ts-ignore
+      post: { id: body.postId }
+    })
+
+    let isToggle = false, toggledReactions: IReaction[] = []
+    if (reactions?.length) {
+      // Remove old reactions
+      while (reactions.length) {
+        let reaction = reactions.pop()
+        if (reaction.type === body.type) {
+          isToggle = true
+          toggledReactions.push(reaction)
+        }
+        await remove(reaction)
+      }
+    }
+
+    // Create new reaction
+    if (!isToggle) {
+      let resp = await create({
+        // @ts-ignore
+        user: { id: req.jwt.id },
+        // @ts-ignore
+        post: { id: body.postId },
+        type: body.type
       })
 
-      if (validateTokenResp.error) {
-        res.redirect(302, "/login?error=PleaseRelogin");
+      if (resp) {
+        res.status(200).send({ data: [resp] });
+        // send notification
+        if (resp.post?.user?.email !== resp.user.email) {
+          req.wsData = {
+            event: WsEvent.POST_REACTION,
+            value: resp
+          }
+        }
       }
       else {
-        let reactions = await get({
-          // @ts-ignore
-          user: { id: validateTokenResp.data.id },
-          // @ts-ignore
-          post: { id: body.postId }
-        })
-
-        let isToggle = false, toggledReactions: IReaction[] = []
-        if (reactions?.length) {
-          // Remove old reactions
-          while (reactions.length) {
-            let reaction = reactions.pop()
-            if (reaction.type === body.type) {
-              isToggle = true
-              toggledReactions.push(reaction)
-            }
-            await remove(reaction)
-          }
-        }
-
-        // Create new reaction
-        if (!isToggle) {
-          let createReactionResp = await create({
-            // @ts-ignore
-            user: { id: validateTokenResp.data.id },
-            // @ts-ignore
-            post: { id: body.postId },
-            type: body.type
-          })
-
-          if (createReactionResp) {
-            res.status(200).send({ data: [createReactionResp] });
-
-            // send notification
-            ws?.sendNotification?.({
-              content: JSON.stringify({
-                event: WsEvent.POST_REACTION,
-                value: createReactionResp.type,
-                content: `${createReactionResp.user.name} đã tương tác với bài viết của bạn`,
-                href: `/p/${createReactionResp.post.slug}`
-              }),
-              targetUserEmail: createReactionResp.post?.user?.email,
-              id: null,
-              topic_id: null,
-              account_id: null
-            })
-          }
-          else {
-            res.status(500).send({ error: "InternalError" });
-          }
-        }
-        else {
-          res.status(200).send({ data: toggledReactions })
-        }
+        res.status(500).send({ error: "InternalError" });
       }
     }
     else {
-      res.redirect(302, "/login?error=PleaseRelogin");
+      res.status(200).send({ data: toggledReactions })
     }
   }
   else if (req.method === "GET") {
@@ -127,3 +96,13 @@ export default async function handler(
     res.status(405).send({ error: "MethodNotAllowed" });
   }
 }
+
+export const config = {
+  api: {
+    externalResolver: true,
+  },
+}
+
+export default withJwt(withWs(handler), {
+  ignoreMethods: ["GET"]
+})
