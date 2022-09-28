@@ -330,6 +330,7 @@ const queryPostSchema = `query query($slug: String, $userId: ID, $state: Publica
             attributes {
               username
               name
+              email
               picture {
                 data {
                   id

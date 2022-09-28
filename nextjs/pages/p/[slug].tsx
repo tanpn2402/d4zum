@@ -3,15 +3,18 @@ import MainHeader from "@components/MainHeader"
 import MobileMenu from "@components/MainHeader/mobile-menu"
 import SuggestedTopic from "@components/SuggestedTopic"
 import SvgSprite from "@components/SvgSprite"
+import useStateRef from "@hooks/useStateRef"
 import IComment from "@interfaces/IComment"
 import IJwtAuthenticateData from "@interfaces/IJwtAuthenticateData"
 import IPost from "@interfaces/IPost"
 import IReaction from "@interfaces/IReaction"
+import { EWSNotiType } from "@lib/ws/enum"
 import { get as getPosts, getMeta as getPostMeta } from "@services/graphql/api/Post.api"
 import { formatDateTime } from "@utils/formatter"
 import { getCookies } from "cookies-next"
 import PublicationState from "enums/PublicationState"
 import ReactionType from "enums/ReactionType"
+import WsEvent from "enums/WsEvent"
 import jwtDecode from "jwt-decode"
 import { GetServerSideProps, NextPage } from "next"
 import dynamic from "next/dynamic"
@@ -38,9 +41,19 @@ const Topic: NextPage = ({
   myReaction: initialMyReaction,
 }: Props) => {
   const router = useRouter()
+  const [wsConnection, updateWsConnection, wsConnectionRef] = useStateRef<WebSocket>(null)
   const [comments, updateComments] = useState<IComment[]>(initialComments)
   const [reactions, updateReactions] = useState<IReaction[]>(initialReactions)
   const [myReaction, updateMyReaction] = useState<IReaction>(initialMyReaction)
+
+  useEffect(() => {
+    return () => {
+      if (wsConnectionRef.current) {
+        wsConnectionRef.current.close()
+        updateWsConnection(null)
+      }
+    }
+  }, [])
 
   useEffect(() => {
     ((function (hljs) {
@@ -53,11 +66,106 @@ const Topic: NextPage = ({
     )
   }, [comments])
 
+  useEffect(() => {
+    fetch(`/api/v1/extension/ws?url=${encodeURIComponent(window.location.pathname)}&type=${EWSNotiType.POST.toString()}`)
+      .then(async res => {
+        if (res.status === 200) {
+          let json = await res.json()
+          if (json?.data?.length) {
+            let wsNotification = json?.data.filter(e => e.type === EWSNotiType.POST)[0]
+            if (wsNotification) {
+              // @ts-ignore
+              window.WebSocket = window.WebSocket || window.MozWebSocket
+
+              if (window.WebSocket) {
+                // open connection
+                if (wsConnectionRef.current) {
+                  wsConnectionRef.current.close()
+                  updateWsConnection(null)
+                }
+                var connection = new WebSocket(wsNotification?.url + `?type=${EWSNotiType.POST.toString()}`)
+
+                connection.onmessage = function (message) {
+                  try {
+                    var json = JSON.parse(message.data);
+                  } catch (e) {
+                    console.log('This doesn\'t look like a valid JSON: ', message.data);
+                    return;
+                  }
+
+                  if (json.type === 'welcome') {
+                    // subscribe to chatwoot ws
+                    connection.send(JSON.stringify({
+                      command: "subscribe",
+                      identifier: JSON.stringify({
+                        channel: "RoomChannel",
+                        pubsub_token: wsNotification?.pubsub_token,
+                      })
+                    }));
+                  }
+                  else if (json.message?.event === 'message.created') {
+                    // receive new message
+                    if (json.message.data?.content_type === "article") {
+                      try {
+                        const content = JSON.parse(json.message.data?.content)
+                        if (content.event === WsEvent.POST_REACTION_CREATED.toString() ||
+                          content.event === WsEvent.POST_REACTION_CHANGED.toString() ||
+                          content.event === WsEvent.POST_REACTION_DELETED.toString()) {
+                          handleUpdateReactionCount()
+                        }
+                        else if (content.event === WsEvent.COMMENT_CREATED.toString() ||
+                          content.event === WsEvent.COMMENT_DELETED.toString() ||
+                          content.event === WsEvent.COMMENT_UPDATED.toString()) {
+                          handleRefreshComment()
+                        }
+                      }
+                      catch (e) {
+                        console.log('This doesn\'t look like a valid JSON: ', json.message.data?.content);
+                        return;
+                      }
+                    }
+                  }
+                  else {
+                    // ignore other messages
+                  }
+                }
+
+                updateWsConnection(connection)
+              }
+            }
+          }
+        }
+        else {
+          throw Error("ErrorStatus" + res.status)
+        }
+      })
+      .catch(err => {
+        console.error(err)
+      })
+  }, [router.pathname])
+
   const handleRefreshComment = async () => {
-    let resp = await getPostMeta({ slug: post.slug })
-    if (resp?.comments) {
-      updateComments(resp?.comments)
-    }
+    fetch("/api/v1/post/comment?postId=" + post.id, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json"
+      }
+    })
+      .then(async resp => {
+        let json: {
+          error: any
+          data: IComment[]
+        } = await resp.json();
+        if (resp.status === 200) {
+          updateComments(json.data)
+        }
+        else {
+          throw json.error
+        }
+      })
+      .catch(error => {
+        console.log(error)
+      })
   }
 
   const handleReaction = async (event: any, type: ReactionType) => {
@@ -82,7 +190,7 @@ const Topic: NextPage = ({
             data: IReaction[]
           } = await resp.json();
           if (resp.status === 200) {
-            handleUpdateReactionCount()
+            // handleUpdateReactionCount()
           }
           else {
             throw json.error
@@ -322,7 +430,7 @@ const Topic: NextPage = ({
             </div>
           </div>
           {comments?.map?.(el => {
-            return <CommentBlock key={el.id} {...el} />
+            return <CommentBlock key={el.id + "_" + el.updatedAt} {...el} />
           })}
         </div>
 

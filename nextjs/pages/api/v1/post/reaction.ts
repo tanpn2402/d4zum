@@ -1,99 +1,146 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
-import type { NextApiResponse } from 'next'
 import { get, remove, create } from "@services/graphql/api/Reaction.api"
-import ReactionType from "enums/ReactionType"
 import IReaction from "@interfaces/IReaction"
 import WsEvent from "enums/WsEvent"
-import withJwt from "@lib/http/helpers/withJwt"
-import withWs from "@lib/http/helpers/withWs"
-import { IApiRequest } from "@lib/http/interfaces"
+import BaseApiHandler from "@lib/http/BaseApiHandler"
+import { EWSNotiType } from "@lib/ws/enum"
+import { IWSNotification } from "@lib/ws/interfaces"
+import { LoggerManager } from "@utils/logger"
+import { IApiRequest, IApiResponse } from "@lib/http/interfaces"
+import BaseApiRouting from "@lib/http/BaseApiRouting"
 
-type Data = {
-  error?: string,
-  data?: IReaction[]
-}
+const LOGGER = LoggerManager.getLogger(__filename)
+class ReactionApiHandler extends BaseApiHandler<IReaction> {
+  constructor(req: IApiRequest, res: IApiResponse) {
+    super(req, res)
+    LOGGER.info("ReactionApiHandler constructor")
+  }
 
-type ToggleReactionReqBody = {
-  type: ReactionType
-  postId: string
-}
+  public async post() {
+    if (this.req.headers["content-type"] === "application/json") {
+      const body = this.req.body as {
+        postId: string
+      } & IReaction
 
-async function handler(
-  req: IApiRequest,
-  res: NextApiResponse<Data>
-) {
-  if (req.method === "POST" && req.headers["content-type"] === "application/json") {
-    const body: ToggleReactionReqBody = req.body;
-    console.log("Req toggle reaction", body);
-    let reactions = await get({
-      // @ts-ignore
-      user: { id: req.jwt.id },
-      // @ts-ignore
-      post: { id: body.postId }
-    })
+      LOGGER.info("POST", this.req.seq, body)
 
-    let isToggle = false, toggledReactions: IReaction[] = []
-    if (reactions?.length) {
-      // Remove old reactions
-      while (reactions.length) {
-        let reaction = reactions.pop()
-        if (reaction.type === body.type) {
-          isToggle = true
-          toggledReactions.push(reaction)
-        }
-        await remove(reaction)
-      }
-    }
-
-    // Create new reaction
-    if (!isToggle) {
-      let resp = await create({
+      let reactions = await get({
         // @ts-ignore
-        user: { id: req.jwt.id },
+        user: { id: this.req.jwt.id },
         // @ts-ignore
-        post: { id: body.postId },
-        type: body.type
+        post: { id: body.postId }
       })
 
-      if (resp) {
-        res.status(200).send({ data: [resp] });
-        // send notification
-        if (resp.post?.user?.email !== resp.user.email) {
-          req.wsData = {
-            event: WsEvent.POST_REACTION,
-            value: resp
+      let isRemove = reactions?.filter?.(el => el.type === body.type)?.length > 0,
+        isChange = reactions.length > 0 && !isRemove
+
+      Promise.all(reactions?.map?.(el => remove(el)))
+
+      // Create new reaction
+      if (!isRemove) {
+        let resp = await create({
+          // @ts-ignore
+          user: { id: this.req.jwt.id },
+          // @ts-ignore
+          post: { id: body.postId },
+          type: body.type
+        })
+
+        if (resp) {
+          // send notification
+          if (isChange) {
+            this.sendNotification(WsEvent.POST_REACTION_CHANGED, resp)
+          }
+          else {
+            this.sendNotification(WsEvent.POST_REACTION_CREATED, resp)
           }
         }
+        return resp
       }
       else {
-        res.status(500).send({ error: "InternalError" });
+        reactions.forEach(reaction => {
+          this.sendNotification(WsEvent.POST_REACTION_CHANGED, reaction)
+        })
+        return {} as IReaction
       }
     }
     else {
-      res.status(200).send({ data: toggledReactions })
+      return null
     }
   }
-  else if (req.method === "GET") {
-    if (req.query.postId && req.query.postId.toString().trim() !== "") {
-      let getReactionResp = await get({
+
+  public async get() {
+    const query = this.req.query as {
+      postId: string
+    }
+
+    LOGGER.info("GET", this.req.seq, query)
+    if (query.postId && query.postId.toString().trim() !== "") {
+      let resp = await get({
         // @ts-ignore
-        post: { id: req.query.postId.toString().trim() }
+        post: { id: query.postId }
       })
-
-      if (getReactionResp) {
-        res.status(200).send({ data: getReactionResp });
-      }
-      else {
-        res.status(500).send({ error: "InternalError" });
-      }
+      return resp
     }
     else {
-      res.status(500).send({ error: "InternalError" });
+      return null
+    }
+    // return null
+  }
+
+
+  public sendNotification(event: WsEvent, value?: IReaction): void {
+    const notifications: IWSNotification[] = []
+    switch (event) {
+      case WsEvent.POST_REACTION_CREATED: {
+        if (this.req.jwt?.id !== value?.post?.user?.id) {
+          notifications.push({
+            content: JSON.stringify({
+              event: event,
+              value: value.id,
+              content: `${value.post?.user?.name} đã tương tác với bài viết ${value.post?.title}`,
+              href: `/p/${value.post?.slug}`
+            }),
+            // @ts-ignore
+            targetUser: {
+              email: value.post?.user?.email
+            },
+            id: null,
+            topic_id: null,
+            account_id: null,
+            type: EWSNotiType.NOTIFICATION,
+            event: event,
+            value: value
+          })
+        }
+      }
+      case WsEvent.POST_REACTION_CHANGED: {
+        notifications.push({
+          content: JSON.stringify({
+            event: event,
+            value: value
+          }),
+          // @ts-ignore
+          targetUser: {
+            email: value.post?.user?.email
+          },
+          id: null,
+          topic_id: null,
+          account_id: null,
+          type: EWSNotiType.POST,
+          event: event,
+          value: value
+        })
+        break
+      }
+      default: {
+        console.error("NoWsHandlerImplemented", event)
+      }
     }
 
-  }
-  else {
-    res.status(405).send({ error: "MethodNotAllowed" });
+    notifications.forEach(noti => this.ws?.sendNotification?.(noti)?.then?.(response => {
+      LOGGER.info("wsSendResp", response)
+    }))
   }
 }
 
@@ -103,6 +150,8 @@ export const config = {
   },
 }
 
-export default withJwt(withWs(handler), {
-  ignoreMethods: ["GET"]
-})
+export default (new BaseApiRouting(ReactionApiHandler))
+  .withJwt({
+    ignoreMethods: ["GET"]
+  })
+  .getHandler()

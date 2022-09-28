@@ -1,4 +1,6 @@
 import IUser from "@interfaces/IUser"
+import WsEvent from "enums/WsEvent"
+import { EWSNotiType } from "./enum"
 
 interface IWSError {
   error?: string
@@ -28,14 +30,17 @@ interface IWSNotification extends IWSError {
   topic_id: string
   account_id?: string     // agent/admin account-id
   content: string
-  targetUserEmail: string
+  targetUser: IUser
+  type: EWSNotiType
+  event: WsEvent
+  value?: any
 }
 
 interface IWebsocket {
   getUserToken(email: string): Promise<IWSUser>
   getPubsubToken(user?: IUser): Promise<IPubSubToken>
-  getTopic(source_id?: string): Promise<ITopic>
-  join(source_id?: string): Promise<ITopic>
+  getTopic(pubsub: IPubSubToken, wsNotiType: EWSNotiType): Promise<ITopic>
+  join(pubsub?: IPubSubToken): Promise<ITopic>
   sendNotification(message: IWSNotification): Promise<IWSNotification>
 }
 

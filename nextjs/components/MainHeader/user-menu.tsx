@@ -6,6 +6,7 @@ import Link from "next/link";
 import React, { useEffect, useRef, useState } from "react";
 import { formatDateTime } from "@utils/formatter"
 import useStateRef from "@hooks/useStateRef"
+import { EWSNotiType } from "@lib/ws/enum";
 
 const UserMenu = () => {
   const token = getCookie("token")
@@ -68,17 +69,17 @@ const UserNotification = () => {
   useOnOutsideClick(ref, () => togglePanel(false))
 
   useEffect(() => {
-    fetch("/api/v1/extension/ws")
+    fetch(`/api/v1/extension/ws?type=${EWSNotiType.NOTIFICATION.toString()}`)
       .then(async res => {
         if (res.status === 200) {
           let json = await res.json()
-          if (json?.data?.pubsub_token) {
-            setWsUrl(json?.data?.url)
-            setWsToken(json?.data?.pubsub_token)
-          }
-
-          if (json?.data?.topic?.messages) {
-            updateMessages(json?.data?.topic?.messages || [])
+          if (json?.data?.length) {
+            let wsNotification = json?.data.filter(e => e.type === EWSNotiType.NOTIFICATION)[0]
+            if (wsNotification) {
+              setWsUrl(wsNotification?.url)
+              setWsToken(wsNotification?.pubsub_token)
+              updateMessages(wsNotification?.topic?.messages || [])
+            }
           }
         }
         else {
@@ -101,7 +102,7 @@ const UserNotification = () => {
 
     if (window.WebSocket) {
       // open connection
-      var connection = new WebSocket(wsUrl);
+      var connection = new WebSocket(wsUrl + `?type=${EWSNotiType.NOTIFICATION.toString()}`);
 
       connection.onopen = function () {
         // just in there were connection opened...
@@ -142,12 +143,11 @@ const UserNotification = () => {
             }))
           }, 30000)
         }
-        else if (json.message?.event === 'message.created') {
+        else if (json.message?.event === 'message.created' && json.message.data?.content_type === "text") {
           // new message
           updateMessages(
             [json.message?.data].concat(messageRef.current)
           )
-
           updateNewestMessage(json.message?.data)
         }
         else {
@@ -234,7 +234,7 @@ const NotificationItem = React.memo(({ data }: { data: any }) => {
         </a>
       </div>
       <div className="no-gutters">
-        <small><i>{formatDateTime(data.created_at)}</i></small>
+        <small><i>{formatDateTime(data.created_at * 1000)}</i></small>
       </div>
     </div>
   </div>

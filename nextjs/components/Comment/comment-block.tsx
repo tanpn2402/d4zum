@@ -56,7 +56,7 @@ const CommentBlock = ({
   const handleSendDelete = (ev: any) => {
     ev.preventDefault()
     setUpdateRespError(null)
-    fetch('/api/comments/' + id, {
+    fetch('/api/v1/post/comment?id=' + id, {
       method: "DELETE",
       headers: {
         "content-type": "application/json; charset=utf-8",
@@ -77,15 +77,13 @@ const CommentBlock = ({
     ev.preventDefault()
     setUpdateRespError(null)
     const reqBody = {
-      "data": {
-        "user": user?.id,
-        "content": cmtEditor.getData(),
-        "is_blocked": false,
-        "post": id
-      }
+      "user": user?.id,
+      "content": cmtEditor.getData(),
+      "is_blocked": false,
+      "post": id
     }
 
-    fetch('/api/comments/' + id, {
+    fetch('/api/v1/post/comment?id=' + id, {
       method: "PUT",
       headers: {
         "content-type": "application/json; charset=utf-8",

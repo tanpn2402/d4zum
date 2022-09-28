@@ -3,7 +3,13 @@ enum EWSError {
   NO_CONTACT = "NO_CONTACT"
 }
 
+enum EWSNotiType {
+  POST = "post",                // update post metadata if user on this page
+  NOTIFICATION = "notification" // owner notification
+}
+
 
 export {
-  EWSError
+  EWSError,
+  EWSNotiType
 }

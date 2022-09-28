@@ -1,3 +1,6 @@
+import { LoggerManager } from "@utils/logger"
+
+const LOGGER = LoggerManager.getLogger(__filename)
 
 interface Error {
   message: string
@@ -17,10 +20,10 @@ export default async function graphQL<T>(query: string, { variables }: any = {},
     GRAPHQL_URL = `${process.env.GRAPHQL_HTTP}://${process.env.GRAPHQL_HOST}:${process.env.GRAPHQL_PORT}`;
   }
   const bearer = token || process.env.GRAPHQL_BEARER_TOKEN || process.env.NEXT_PUBLIC_GRAPHQL_BEARER_TOKEN
-  console.log(
-    GRAPHQL_URL,
-    `Token = ` + bearer
-  );
+  // LOGGER.info(
+  //   GRAPHQL_URL,
+  //   `Token = ` + bearer
+  // );
   const res = await fetch(GRAPHQL_URL + '/graphql', {
     method: 'POST',
     headers: {
@@ -33,11 +36,11 @@ export default async function graphQL<T>(query: string, { variables }: any = {},
     }),
   })
 
+  LOGGER.info("GRAPHQL has been returned data!")
+
   const json: GrapQLResponse<T> = await res.json()
   if (json.errors) {
-    console.error(json.errors)
-    console.error(query);
-    // throw new Error('Failed to fetch API')
+    LOGGER.error("GRAPHQL error", json.errors, query)
   }
 
   return json

@@ -63,7 +63,7 @@ const REACTION_DATA = `data  {
     }
 }`
 
-export async function get(reaction: IReaction): Promise<IReaction[]> {
+export async function get(reaction: IReaction): Promise<IReaction[] | null> {
   let variables = {} as {
     userId?: String,
     postId?: String

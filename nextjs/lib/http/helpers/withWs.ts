@@ -1,12 +1,13 @@
 import IComment from "@interfaces/IComment";
 import IReaction from "@interfaces/IReaction";
 import ws from "@lib/ws";
+import { EWSNotiType } from "@lib/ws/enum";
 import WsEvent from "enums/WsEvent";
 import { NextApiRequest, NextApiResponse } from "next";
 import { IApiRequest } from "../interfaces";
 
 
-function sendEventPOST_REACTION(event: WsEvent, data: IReaction) {
+function sendEventPOST(event: WsEvent, data: IReaction, type: EWSNotiType) {
   ws?.sendNotification?.({
     content: JSON.stringify({
       event: event,
@@ -14,14 +15,22 @@ function sendEventPOST_REACTION(event: WsEvent, data: IReaction) {
       content: `${data.user.name} đã tương tác với bài viết ${data.post.title}`,
       href: `/p/${data.post.slug}`
     }),
-    targetUserEmail: data.post?.user?.email,
+    // @ts-ignore
+    targetUser: {
+      email: data.post?.user?.email
+    },
     id: null,
     topic_id: null,
-    account_id: null
+    account_id: null,
+    type: type,
+    event: event,
+    value: data
+  })?.then?.(response => {
+    console.log("wsSendResp", response)
   })
 }
 
-function sendEventCOMMENT_CREATED(event: WsEvent, data: IComment) {
+function sendEventCOMMENT(event: WsEvent, data: IComment, type: EWSNotiType) {
   ws?.sendNotification?.({
     content: JSON.stringify({
       event: event,
@@ -29,10 +38,18 @@ function sendEventCOMMENT_CREATED(event: WsEvent, data: IComment) {
       content: `${data.user.name} đã bình luận bài viết ${data.post.title}: ${data.content}`,
       href: `/p/${data.post.slug}`
     }),
-    targetUserEmail: data.post?.user?.email,
+    // @ts-ignore
+    targetUser: {
+      email: data.post?.user?.email
+    },
     id: null,
     topic_id: null,
-    account_id: null
+    account_id: null,
+    type: type,
+    event: event,
+    value: data
+  })?.then?.(response => {
+    console.log("wsSendResp", response)
   })
 }
 
@@ -45,13 +62,27 @@ const withWs = (next: (req: IApiRequest, res: NextApiResponse) => any) => {
       let wsData = (req as IApiRequest).wsData
       if (wsData) {
         switch (wsData.event) {
-          case WsEvent.POST_REACTION: {
-            sendEventPOST_REACTION(wsData.event, wsData.value)
+          case WsEvent.POST_REACTION_CREATED: {
+            sendEventPOST(wsData.event, wsData.value, EWSNotiType.POST)
+            sendEventPOST(wsData.event, wsData.value, EWSNotiType.NOTIFICATION)
+            break
+          }
+          case WsEvent.COMMENT_DELETED: {
+            sendEventCOMMENT(wsData.event, wsData.value, EWSNotiType.POST)
             break
           }
           case WsEvent.COMMENT_CREATED: {
-            sendEventCOMMENT_CREATED(wsData.event, wsData.value)
-            break
+            sendEventCOMMENT(wsData.event, wsData.value, EWSNotiType.POST)
+            sendEventCOMMENT(wsData.event, wsData.value, EWSNotiType.NOTIFICATION)
+            break;
+          }
+          case WsEvent.COMMENT_UPDATED: {
+            sendEventCOMMENT(wsData.event, wsData.value, EWSNotiType.POST)
+            break;
+          }
+          case WsEvent.COMMENT_DELETED: {
+            sendEventCOMMENT(wsData.event, wsData.value, EWSNotiType.POST)
+            break;
           }
           default: {
             console.error("NoWsHandlerImplemented", wsData.event)
