@@ -1,6 +1,6 @@
 import JWT from "jsonwebtoken"
 import { IApiRequest, IApiResponse } from "@lib/http/interfaces"
-import ws from "@lib/ws"
+import WsManager from "@lib/ws"
 import { IWebsocket } from "@lib/ws/interfaces"
 import { LoggerManager } from "@utils/logger"
 import { getCookie } from "cookies-next"
@@ -16,7 +16,7 @@ type WithJwtOptions = {
 export default class BaseApiRouting<I, T extends BaseApiHandler<I>> {
   protected isWithJwt: boolean = false
   protected withJwtOptions: WithJwtOptions
-  protected ws: IWebsocket = ws
+  protected ws: IWebsocket = WsManager.getWs()
 
   constructor(private readonly _createClass: {
     new(req: IApiRequest, res: IApiResponse): T
@@ -58,6 +58,6 @@ export default class BaseApiRouting<I, T extends BaseApiHandler<I>> {
   }
 
   private next(req: IApiRequest, res: IApiResponse) {
-    return (new this._createClass(req, res)).withWs(ws).execute()
+    return (new this._createClass(req, res)).withWs(this.ws).execute()
   }
 }

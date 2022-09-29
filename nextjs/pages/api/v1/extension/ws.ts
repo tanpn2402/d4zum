@@ -4,9 +4,14 @@ import IUser from "@interfaces/IUser";
 import { get } from "@services/graphql/api/Post.api";
 import { getCookie } from "cookies-next";
 import jwtDecode from "jwt-decode";
-import ws from "lib/ws"
-import { EWSError, EWSNotiType } from "lib/ws/enum";
-import type { NextApiRequest, NextApiResponse } from 'next'
+import WsManager from "@lib/ws"
+import { EWSError, EWSNotiType } from "@lib/ws/enum";
+import { LoggerManager } from "@utils/logger";
+import BaseApiHandler from "@lib/http/BaseApiHandler";
+import WsEvent from "enums/WsEvent";
+import BaseApiRouting from "@lib/http/BaseApiRouting";
+
+const LOGGER = LoggerManager.getLogger(__filename)
 
 interface IWSData {
   url: string,
@@ -21,9 +26,9 @@ interface IWSData {
 
 function pubsub(user: IUser, type: EWSNotiType) {
   return new Promise<IWSData>(async (resolve, reject) => {
-    let pubsub = await ws.getPubsubToken(user)
+    let pubsub = await WsManager.getWs().getPubsubToken(user)
     if (!pubsub.error) {
-      let topic = await ws.getTopic(pubsub, type)
+      let topic = await WsManager.getWs().getTopic(pubsub, type)
       if (!topic.error) {
         resolve({
           topic: {
@@ -39,7 +44,7 @@ function pubsub(user: IUser, type: EWSNotiType) {
 
       }
       else if (topic.error === EWSError.NO_TOPIC.toString()) {
-        let joinResp = await ws.join(pubsub)
+        let joinResp = await WsManager.getWs().join(pubsub)
         if (!joinResp.error) {
           resolve({
             topic: {
@@ -63,54 +68,56 @@ function pubsub(user: IUser, type: EWSNotiType) {
   })
 }
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
-  const { url, type } = req.query, promises: Promise<IWSData>[] = [], wsTypes: EWSNotiType[] = []
+class WebsocketApiHandler extends BaseApiHandler<IWSData> {
 
-  if (type) {
-    type.toString().split(",").forEach(type => {
-      wsTypes.push(type as EWSNotiType)
-    })
-  }
+  public async get(): Promise<number | IWSData | IWSData[]> {
+    const { url, type } = this.req.query as { url: string, type: string },
+      promises: Promise<IWSData>[] = [],
+      wsTypes: EWSNotiType[] = []
 
-  console.log("wsTypes", wsTypes);
-  if (wsTypes.length === 0 || (wsTypes.includes(EWSNotiType.POST) && url)) {
-    if (url.toString().trim().indexOf("/p/") === 0) {
-      // post
-      const posts = await get({ slug: url.toString().replace("/p/", "") })
-
-      console.log(posts);
-      if (posts && posts.length) {
-        promises.push(pubsub(posts[0].user, EWSNotiType.POST))
+    if (type) {
+      type.toString().split(",").forEach(type => {
+        wsTypes.push(type as EWSNotiType)
+      })
+    }
+    if (wsTypes.length === 0 || (wsTypes.includes(EWSNotiType.POST) && url)) {
+      if (url.toString().trim().indexOf("/p/") === 0) {
+        // post
+        const posts = await get({ slug: url.toString().replace("/p/", "") })
+        if (posts && posts.length) {
+          promises.push(pubsub(posts[0].user, EWSNotiType.POST))
+        }
       }
     }
-  }
 
-  const jwtToken = getCookie("jwt", { req, res })?.toString()
-  if (wsTypes.length === 0 || (wsTypes.includes(EWSNotiType.NOTIFICATION) && ws && jwtToken)) {
-    const jwtData: IJwtAuthenticateData = jwtDecode(jwtToken.toString())
-    // @ts-ignore ignore-missing-not-optional-properties
-    const user: IUser = {
-      email: jwtData.email,
-      username: jwtData.username,
-      name: jwtData.name,
+    const jwtToken = getCookie("jwt", { req: this.req, res: this.res })?.toString()
+    if (wsTypes.length === 0 || (wsTypes.includes(EWSNotiType.NOTIFICATION) && WsManager.getWs() && jwtToken)) {
+      const jwtData: IJwtAuthenticateData = jwtDecode(jwtToken.toString())
+      // @ts-ignore ignore-missing-not-optional-properties
+      const user: IUser = {
+        email: jwtData.email,
+        username: jwtData.username,
+        name: jwtData.name,
+      }
+      promises.push(pubsub(user, EWSNotiType.NOTIFICATION))
     }
-    promises.push(pubsub(user, EWSNotiType.NOTIFICATION))
+
+    let resp = await new Promise<number | IWSData[]>(resolve => {
+      Promise.all(promises)
+        .then(values => {
+          resolve(values)
+        })
+        .catch(error => {
+          LOGGER.error(error)
+          resolve(500)
+        })
+    })
+    return resp
   }
 
-  Promise.all(promises)
-    .then(values => {
-      res.status(200).send({
-        data: values
-      })
-    })
-    .catch(error => {
-      res.status(500).send({
-        error: error.message
-      })
-    })
+  public sendNotification(event: WsEvent, value?: IWSData): void {
+
+  }
 }
 
 export const config = {
@@ -118,3 +125,7 @@ export const config = {
     externalResolver: true,
   },
 }
+
+export default (new BaseApiRouting(WebsocketApiHandler))
+  .withJwt()
+  .getHandler()

@@ -1,39 +1,38 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
-import type { NextApiRequest, NextApiResponse } from 'next'
-import { publish } from "@services/graphql/api/Post.api"
+import { get, publish } from "@services/graphql/api/Post.api"
 import IPost from "@interfaces/IPost"
-import withJwt from "@lib/http/helpers/withJwt"
+import BaseApiHandler from "@lib/http/BaseApiHandler"
+import WsEvent from "enums/WsEvent"
+import PublicationState from "enums/PublicationState"
+import BaseApiRouting from "@lib/http/BaseApiRouting"
+import { LoggerManager } from "@utils/logger"
 
-type Data = {
-  error?: string,
-  data?: IPost
-}
+const LOGGER = LoggerManager.getLogger(__filename)
 
-type TogglePublishReqBody = {
-  id?: string
-  slug: string
-}
+class PushlishApiHandler extends BaseApiHandler<IPost> {
 
-async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse<Data>
-) {
-  if (req.method === "POST" && req.headers["content-type"] === "application/json") {
-    const body: TogglePublishReqBody = req.body;
-    console.log("TogglePublishReqBody", body);
+  public async post(): Promise<number | IPost> {
+    const body = this.req.body as IPost;
+    LOGGER.info("POST", body);
+    let posts = await get({ slug: body.slug, state: PublicationState.PREVIEW })
+    if (posts?.length === 0) {
+      posts = await get({ slug: body.slug, state: PublicationState.LIVE })
+    }
+
+    if (posts?.length === 0) {
+      return 404
+    }
+    if (posts[0].user?.id !== this.req.jwt?.id) {
+      return 403
+    }
     let resp = await publish({
       slug: body.slug
     })
-
-    if (resp) {
-      res.status(200).send({ data: resp });
-    }
-    else {
-      res.status(500).send({ error: "InternalError" });
-    }
+    return resp
   }
-  else {
-    res.status(405).send({ error: "MethodNotAllowed" });
+
+  public sendNotification(event: WsEvent, value?: IPost): void {
+
   }
 }
 
@@ -43,4 +42,6 @@ export const config = {
   },
 }
 
-export default withJwt(handler)
+export default (new BaseApiRouting(PushlishApiHandler))
+  .withJwt()
+  .getHandler()

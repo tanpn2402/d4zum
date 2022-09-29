@@ -1,43 +1,33 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
-import type { NextApiRequest, NextApiResponse } from 'next'
 import { create } from "@services/graphql/api/Tag.api"
 import ITag from "@interfaces/ITag"
-import withJwt from "@lib/http/helpers/withJwt"
+import BaseApiHandler from "@lib/http/BaseApiHandler"
+import WsEvent from "enums/WsEvent"
+import BaseApiRouting from "@lib/http/BaseApiRouting"
+import { LoggerManager } from "@utils/logger"
 
-type Data = {
-  error?: string,
-  data?: ITag[]
-}
+const LOGGER = LoggerManager.getLogger(__filename)
+class TagApiHandler extends BaseApiHandler<ITag[]> {
 
-type CreateTagReqBody = {
-  names: string[]
-}
-
-async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse<Data>
-) {
-  if (req.method === "POST" && req.headers["content-type"] === "application/json") {
-    const body: CreateTagReqBody = req.body;
-    console.log("Req create tag", body);
+  public async post(): Promise<number | ITag[]> {
+    const body = this.req.body as {
+      names: string[]
+    };
+    LOGGER.info("POST", body);
     if (body.names.length > 0) {
       let resp = await create({
         names: body.names
       })
 
-      if (resp) {
-        res.status(200).send({ data: resp });
-      }
-      else {
-        res.status(500).send({ error: "InternalError" });
-      }
+      return resp
     }
     else {
-      res.status(200).send({ data: [] as ITag[] });
+      return []
     }
   }
-  else {
-    res.status(405).send({ error: "MethodNotAllowed" });
+
+  public sendNotification(event: WsEvent, value?: ITag[]): void {
+
   }
 }
 
@@ -47,4 +37,6 @@ export const config = {
   },
 }
 
-export default withJwt(handler)
+export default (new BaseApiRouting(TagApiHandler))
+  .withJwt()
+  .getHandler()
