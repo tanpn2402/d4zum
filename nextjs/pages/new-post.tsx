@@ -17,6 +17,7 @@ import useStateRef from "@hooks/useStateRef"
 const PageNewPost: NextPage<Props> = ({
   secret,
   categories,
+  isEditPage,
   post: initalPost
 }: Props) => {
 
@@ -53,76 +54,112 @@ const PageNewPost: NextPage<Props> = ({
 
   const handleAutoSave = (data: string) => {
     if (data?.trim?.() !== '') {
-      console.log(post);
       handleSaveAsDraft({ content: data });
     }
   }
 
-  const handleCreatePost = async ({
-    asDraft,
-    content
-  }: { asDraft: boolean, content?: string } = { asDraft: false }) => {
+  const handleFetch = async ({ asDraft, content }: { asDraft: boolean, content?: string } = { asDraft: false }) => {
+    return new Promise<IPost>(async resolve => {
+      if (isLoading) {
+        return
+      }
 
-    if (isLoading) {
-      return
-    }
+      let formData = await (async function name($: any) {
+        return $("form").serializeArray().reduce((result: { [key: string]: any }, el: { name: string, value: string }) => {
+          result[el.name] = el.value
+          return result
+        }, {});
+      })(
+        // @ts-ignore
+        $
+      )
 
-    let formData = await (async function name($: any) {
-      return $("form").serializeArray().reduce((result: { [key: string]: any }, el: { name: string, value: string }) => {
-        result[el.name] = el.value
-        return result
-      }, {});
-    })(
-      // @ts-ignore
-      $
-    )
-    setLoading(true)
-    setMessage(null)
-    const post = postRef.current;
+      setLoading(true)
+      setMessage(null)
+      const post = postRef.current
 
-    fetch("/api/v1/post", {
-      "method": !post ? "POST" : "PUT",
-      "headers": {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer " + secret
-      },
-      "body": JSON.stringify({
-        "id": post?.id,
-        "title": formData.title,
-        "content": content || editor.getData(),
-        "categories": formData.category !== "" ? [formData.category] : [],
-        "tags": formData.tags?.split(","),
-        "asDraft": asDraft
+      fetch("/api/v1/post", {
+        "method": !post ? "POST" : "PUT",
+        "headers": {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + secret
+        },
+        "body": JSON.stringify({
+          "id": post?.id,
+          "title": formData.title,
+          "content": content || editor.getData(),
+          "categories": formData.category !== "" ? [formData.category] : [],
+          "tags": formData.tags?.split(","),
+          "asDraft": asDraft
+        })
       })
-    })
-      .then(async resp => {
-        let json = await resp.json()
-        if (resp.status === 200) {
-          let data: IPost[] = json.data
-          if (!post && !asDraft) {
-            router.push("/p/" + data[0]?.slug)
+        .then(async resp => {
+          let json = await resp.json()
+          if (resp.status === 200) {
+            let data: IPost = json.data
+            resolve(data)
           }
           else {
-            let newPost: IPost = data[0]
-            updatePost(newPost)
-            setMessage("Lưu thành công nhé!")
+            throw json.error
           }
-        }
-        else {
-          throw json.error
-        }
-      })
-      .catch(error => {
-        console.log(error)
-        setMessage("Lưu thành lỗi rồi, thử lại xíu đi!")
-      })
-      .finally(() => {
-        setLoading(false)
-      })
+        })
+        .catch(error => {
+          console.error(error)
+          setMessage("Lưu thành lỗi rồi, thử lại xíu đi!")
+          resolve(null)
+        })
+        .finally(() => {
+          setLoading(false)
+        })
+    })
   }
 
-  const handleSaveAsDraft = ({ content }: { content?: string }) => {
-    handleCreatePost({ asDraft: true, content })
+  const handleCreatePost = async () => {
+    let post = await handleFetch()
+    if (post) {
+      if (!post.publishedAt) {
+        fetch("/api/v1/post/publish", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            slug: post?.slug
+          })
+        })
+          .then(async resp => {
+            let json: {
+              error: any
+              data: IPost
+            } = await resp.json();
+            if (resp.status === 200) {
+              router.push("/p/" + json?.data?.slug)
+            }
+            else {
+              throw json.error
+            }
+          })
+          .catch(error => {
+            console.error(error)
+            setMessage("Lưu thành lỗi rồi, thử lại xíu đi!")
+          })
+      }
+      else {
+        router.push("/p/" + post?.slug)
+      }
+    }
+  }
+
+  const handleSaveAsDraft = async ({ content }: { content?: string }) => {
+    let post = await handleFetch({ asDraft: true, content })
+    updatePost(post)
+    setMessage("Lưu thành công nhé!")
+  }
+
+  const handleUpdatePost = async () => {
+    let post = await handleFetch()
+    updatePost(post)
+    setMessage("Lưu thành công nhé!")
   }
 
   useEffect(() => {
@@ -155,75 +192,7 @@ const PageNewPost: NextPage<Props> = ({
                   defaultValue={post?.title} />
                 <span className="tt-value-input">99</span>
               </div>
-              {/* <div className="tt-note">Describe your topic well, while keeping the subject as short as possible.</div> */}
             </div>
-            {/* <div className="form-group">
-              <label>Topic Type</label>
-              <div className="tt-js-active-btn tt-wrapper-btnicon">
-                <div className="row tt-w410-col-02">
-                  <div className="col-4 col-lg-3 col-xl-2">
-                    <a href="#" className="tt-button-icon">
-                      <span className="tt-icon">
-                        <svg>
-                          <use xlinkHref="#icon-discussion" />
-                        </svg>
-                      </span>
-                      <span className="tt-text">Discussion</span>
-                    </a>
-                  </div>
-                  <div className="col-4 col-lg-3 col-xl-2">
-                    <a href="#" className="tt-button-icon">
-                      <span className="tt-icon">
-                        <svg>
-                          <use xlinkHref="#Question" />
-                        </svg>
-                      </span>
-                      <span className="tt-text">Question</span>
-                    </a>
-                  </div>
-                  <div className="col-4 col-lg-3 col-xl-2">
-                    <a href="#" className="tt-button-icon">
-                      <span className="tt-icon">
-                        <svg>
-                          <use xlinkHref="#Poll" />
-                        </svg>
-                      </span>
-                      <span className="tt-text">Poll</span>
-                    </a>
-                  </div>
-                  <div className="col-4 col-lg-3 col-xl-2">
-                    <a href="#" className="tt-button-icon">
-                      <span className="tt-icon">
-                        <svg>
-                          <use xlinkHref="#icon-gallery" />
-                        </svg>
-                      </span>
-                      <span className="tt-text">Gallery</span>
-                    </a>
-                  </div>
-                  <div className="col-4 col-lg-3 col-xl-2">
-                    <a href="#" className="tt-button-icon">
-                      <span className="tt-icon">
-                        <svg>
-                          <use xlinkHref="#Video" />
-                        </svg>
-                      </span>
-                      <span className="tt-text">Video</span>
-                    </a>
-                  </div>
-                  <div className="col-4 col-lg-3 col-xl-2">
-                    <a href="#" className="tt-button-icon">
-                      <span className="tt-icon">
-                        <svg>
-                          <use xlinkHref="#Others" />
-                        </svg>
-                      </span>
-                      <span className="tt-text">Other</span>
-                    </a>
-                  </div>
-                </div>
-              </div>
-            </div> */}
             <div className="pt-editor">
               <h6 className="pt-title">Nội dung</h6>
               <div className="mb-4 p-0 tt-single-topic">
@@ -253,12 +222,15 @@ const PageNewPost: NextPage<Props> = ({
               </div>
               <div className="row">
                 <div className="col-auto ml-md-auto">
-                  <button type="button" className="btn btn-primary btn-width-lg me-2" onClick={() => handleSaveAsDraft({})}>Lưu nháp</button>
+                  {isEditPage && <>
+                    <button type="button" disabled={isLoading} className="btn btn-primary btn-width-lg" onClick={() => handleUpdatePost()}>Cập nhật</button>
+                  </>}
 
-                  {!post && <button type="button" disabled={isLoading} className="btn btn-secondary btn-width-lg" onClick={() => handleCreatePost()}>Tạo mới</button>}
-                  {post && <button type="button" disabled={isLoading} className="btn btn-secondary btn-width-lg" onClick={() => handleCreatePost()}>Cập nhật</button>}
-                  {isLoading && <span className="ms-4"><img width="40" src="/images/svg/disk-spin.svg" /></span>}
-                  {message && <span className="ms-4">{message}</span>}
+                  {!isEditPage && <>
+                    <button type="button" className="btn btn-primary btn-width-lg" onClick={() => handleSaveAsDraft({})}>Lưu nháp</button>
+                  </>}
+
+                  <button type="button" disabled={isLoading} className="btn btn-secondary btn-width-lg ms-2" onClick={() => handleCreatePost()}>Đăng bài</button>
                 </div>
               </div>
             </div>
@@ -276,6 +248,7 @@ type Props = {
   tags?: ITag[],
   categories?: ICategory[]
   post?: IPost
+  isEditPage?: boolean
 }
 
 export const getServerSideProps: GetServerSideProps<Props> = async (context) => {
@@ -296,8 +269,6 @@ export const getServerSideProps: GetServerSideProps<Props> = async (context) => 
     getCategories({}),
     getTags({})
   ])
-
-  console.log(tags);
 
   return {
     props: {

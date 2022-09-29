@@ -2,9 +2,7 @@ import ICategory from "@interfaces/ICategory"
 import IJwtAuthenticateData from "@interfaces/IJwtAuthenticateData"
 import IPost from "@interfaces/IPost"
 import ITag from "@interfaces/ITag"
-import IUser from "@interfaces/IUser"
 import { get as getPosts } from "@services/graphql/api/Post.api"
-import { getByUsername } from "@services/graphql/api/User.api"
 import { get as getCategories } from "@services/graphql/api/Category.api"
 import { get as getTags } from "@services/graphql/api/Tag.api"
 import { getCookies } from "cookies-next"
@@ -19,6 +17,7 @@ const PageUser: NextPage<Props> = (props: Props) => {
 
   return <PageNewPost
     {...props}
+    isEditPage={true}
   />
 }
 

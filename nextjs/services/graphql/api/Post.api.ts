@@ -15,6 +15,7 @@ import { parseUser } from "./User.api";
 import UtilParser from './UtilParser';
 
 type GetPostProps = {
+  id?: string
   slug?: string
   userId?: string
   state?: PublicationState
@@ -27,16 +28,31 @@ type PostGraphQLResponse = {
 }
 
 export async function get({
+  id,
   slug,
   userId,
   state
 }: GetPostProps): Promise<IPost[]> {
+  let variables = {} as {
+    id?: string
+    slug?: string
+    userId?: string
+    state?: PublicationState
+  }
+  if (id) {
+    variables.id = id
+  }
+  if (slug) {
+    variables.slug = slug
+  }
+  if (userId) {
+    variables.userId = userId
+  }
+  if (state) {
+    variables.state = state
+  }
   let resp = await graphQL<PostGraphQLResponse>(queryPostSchema, {
-    variables: {
-      slug,
-      userId,
-      state
-    }
+    variables: variables
   })
 
   let posts: IPost[] = resp.data?.posts?.data?.map?.((post: PostEntity) => {
@@ -272,9 +288,12 @@ export async function publish({
   }
 }
 
-const queryPostSchema = `query query($slug: String, $userId: ID, $state: PublicationState) {
+const queryPostSchema = `query query($id: ID, $slug: String, $userId: ID, $state: PublicationState) {
   posts (
     filters: {
+      id: {
+        eq: $id
+      }
       slug: {
         eq: $slug
       }

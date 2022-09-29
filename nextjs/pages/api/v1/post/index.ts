@@ -1,102 +1,111 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
-import type { NextApiResponse } from 'next'
-import { create, update } from "@services/graphql/api/Post.api"
+import { create, get, update } from "@services/graphql/api/Post.api"
 import { get as getTags, create as createTags } from "@services/graphql/api/Tag.api"
 import IPost from "@interfaces/IPost"
 import ITag from "@interfaces/ITag"
-import { IApiRequest } from "@lib/http/interfaces"
-import withJwt from "@lib/http/helpers/withJwt"
+import BaseApiRouting from "@lib/http/BaseApiRouting"
+import BaseApiHandler from "@lib/http/BaseApiHandler"
+import WsEvent from "enums/WsEvent"
+import PublicationState from "enums/PublicationState"
 
-type Data = {
-  error?: string,
-  data?: IPost[]
-}
 
-type CreatePostReqBody = {
-  id?: string
-  title: string
-  content: string
-  categories: string[]
-  tags: string[]
-  asDraft?: boolean
-}
+class PostApiHandler extends BaseApiHandler<IPost> {
 
-async function handler(
-  req: IApiRequest,
-  res: NextApiResponse<Data>
-) {
-  if (req.headers["content-type"] !== "application/json") {
-    res.status(405).send({ error: "MethodNotAllowed" });
-    return
-  }
-
-  if ((req.method === "POST" || req.method === "PUT")) {
-    const body: CreatePostReqBody = req.body;
-    console.log("Post", req.method, body);
-
-    let resp: IPost, tags = [] as ITag[];
-
-    if (body.tags && body.tags.length) {
-      const existedTags: ITag[] = await getTags({ name: body.tags.map(e => e.trim()) })
+  private async saveTags(tags: string[]): Promise<ITag[]> {
+    let result: ITag[] = []
+    if (tags?.length) {
+      const existedTags: ITag[] = await getTags({ name: tags.map(e => e.trim()) })
       let restTags: string[] = []
 
-      body.tags.forEach(tag => {
+      tags.forEach(tag => {
         let t = existedTags.filter(el => el.name.trim().toLowerCase() === tag.trim().toLowerCase())
         if (t.length === 0) {
           restTags.push(tag)
         }
         else {
-          tags = tags.concat(t)
+          result = result.concat(t)
         }
       })
 
       if (restTags.length > 0) {
         let t = await createTags({ names: restTags })
         if (t) {
-          tags = tags.concat(t)
+          result = result.concat(t)
         }
       }
     }
 
-    if (tags.length > 0) {
-      tags = tags.reduce((result: ITag[], tag) => {
-        if (result.filter(el => el.name.trim().toLowerCase() === tag.name.trim().toLowerCase()).length === 0) {
-          result.push(tag)
+    if (result.length > 0) {
+      result = result.reduce((rlt: ITag[], tag) => {
+        if (rlt.filter(el => el.name.trim().toLowerCase() === tag.name.trim().toLowerCase()).length === 0) {
+          rlt.push(tag)
         }
-        return result
+        return rlt
       }, [])
     }
 
-    if (req.method === "POST") {
-      resp = await create({
-        content: body.content,
-        title: body.title,
-        userId: req.jwt.id,
-        categories: body.categories,
-        tags: tags.map(e => e.id),
-        asDraft: body.asDraft
-      })
-    }
-    else {
-      resp = await update({
-        id: body.id,
-        content: body.content,
-        title: body.title,
-        userId: req.jwt.id,
-        categories: body.categories,
-        tags: tags.map(e => e.id),
-      })
-    }
+    return result
+  }
 
-    if (resp) {
-      res.status(200).send({ data: [resp] });
+  public async post(): Promise<number | IPost> {
+    const body = this.req.body as {
+      tags: string[]
+      categories: string[]
+      asDraft: boolean
+    } & IPost
+    const tags = await this.saveTags(body.tags)
+
+    let resp = await create({
+      content: body.content,
+      title: body.title,
+      userId: this.req.jwt.id,
+      categories: body.categories,
+      tags: tags.map(e => e.id),
+      asDraft: body.asDraft
+    })
+
+    return resp
+  }
+
+  public async put(): Promise<number | IPost> {
+    const body = this.req.body as {
+      tags: string[]
+      categories: string[]
+    } & IPost
+    const tags = await this.saveTags(body.tags)
+
+    if (body.id) {
+      let posts = await get({ id: body.id, state: PublicationState.PREVIEW })
+      if (posts?.length === 0) {
+        posts = await get({ id: body.id, state: PublicationState.LIVE })
+      }
+
+      if (posts?.length === 0) {
+        return 404
+      }
+      else if (posts[0].user?.id !== this.req.jwt?.id) {
+        return 403
+      }
+      else {
+        let resp = await update({
+          id: body.id,
+          content: body.content,
+          title: body.title,
+          userId: this.req.jwt.id,
+          categories: body.categories,
+          tags: tags.map(e => e.id),
+        })
+
+        return resp
+      }
     }
     else {
-      res.status(500).send({ error: "InternalError" });
+      return 404
     }
   }
-  else {
-    res.status(405).send({ error: "MethodNotAllowed" });
+
+  public sendNotification(event: WsEvent, value?: IPost): void {
+
   }
 }
 
@@ -106,4 +115,6 @@ export const config = {
   },
 }
 
-export default withJwt(handler)
+export default (new BaseApiRouting(PostApiHandler))
+  .withJwt()
+  .getHandler()
