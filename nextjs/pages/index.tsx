@@ -90,8 +90,8 @@ const Home: NextPage = ({
                 <a><span className="tt-color03 tt-badge" style={{ backgroundColor: post.categories[0]?.color }}>{post.categories[0]?.name}</span></a>
               </Link>
             </div>}
-            <div className="tt-col-value  hide-mobile">{post.reactionCount}</div>
-            <div className="tt-col-value hide-mobile">{post.commentCount}</div>
+            <div className="tt-col-value  hide-mobile">{post.reactionCount > 9 ? "9+" : post.reactionCount}</div>
+            <div className="tt-col-value hide-mobile">{post.commentCount > 9 ? "9+" : post.commentCount}</div>
             {/* <div className="tt-col-value  hide-mobile">12.6k</div> */}
             <div className="tt-col-value hide-mobile">
               <div>{formatDateTime(post.createdAt, { dateFormat: "none" })}</div>
