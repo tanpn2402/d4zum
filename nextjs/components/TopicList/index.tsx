@@ -14,7 +14,12 @@ export enum TopicListColumn {
   COMMENT,
   VIEW,
   TIME_CREATED,
-  STATE
+  STATE,
+  SETTING
+}
+
+export enum ActionType {
+  SETTING_CLICK
 }
 
 const TopicList = ({
@@ -25,10 +30,12 @@ const TopicList = ({
     TopicListColumn.REACTION,
     TopicListColumn.COMMENT,
     TopicListColumn.TIME_CREATED
-  ]
+  ],
+  onActionClick
 }: {
   posts: IPost[],
-  columns?: TopicListColumn[]
+  columns?: TopicListColumn[],
+  onActionClick?: (type: ActionType, value?: any) => void
 }) => {
 
   return <div className="tt-topic-list">
@@ -43,13 +50,19 @@ const TopicList = ({
 
     {posts && posts.map(post => <div key={post.id} className={`tt-item ${post.is_trending ? "tt-itemselect" : ""}`}>
       <div className="tt-col-avatar">
-        <Link href={"/m/" + post.user?.username}>
+        {!columns.includes(TopicListColumn.SETTING) && <Link href={"/m/" + post.user?.username}>
           <a>
             <svg className="tt-icon">
               <use xlinkHref={"#icon-ava-" + post.user?.name?.charAt?.(0)?.toLowerCase?.()} />
             </svg>
           </a>
-        </Link>
+        </Link>}
+
+        {columns.includes(TopicListColumn.SETTING) && <svg className="tt-icon js-post-settings-btn" onClick={() => {
+          onActionClick?.(ActionType.SETTING_CLICK, post)
+        }}>
+          <use xlinkHref="#icon-settings_fill" />
+        </svg>}
       </div>
       <div className="tt-col-description">
         <h6 className="tt-title">
@@ -80,19 +93,24 @@ const TopicList = ({
           </div>}
         </div>
       </div>
-      {post.categories[0]?.name && <div className="tt-col-category">
-        <Link href={"/topics/" + post.categories[0]?.slug}>
-          <a><span className="tt-color03 tt-badge" style={{ backgroundColor: post.categories[0]?.color }}>{post.categories[0]?.name}</span></a>
-        </Link>
-      </div>}
+      {
+        post.categories[0]?.name && <div className="tt-col-category">
+          <Link href={"/topics/" + post.categories[0]?.slug}>
+            <a><span className="tt-color03 tt-badge" style={{ backgroundColor: post.categories[0]?.color }}>{post.categories[0]?.name}</span></a>
+          </Link>
+        </div>
+      }
       {columns.includes(TopicListColumn.REACTION) && <div className="tt-col-value  hide-mobile">{post.reactionCount > 9 ? "9+" : post.reactionCount}</div>}
       {columns.includes(TopicListColumn.COMMENT) && <div className="tt-col-value hide-mobile">{post.commentCount > 9 ? "9+" : post.commentCount}</div>}
       {columns.includes(TopicListColumn.STATE) && <div className="tt-col-value">{post.publishedAt === null ? "PREVIEW" : "LIVE"}</div>}
-      {columns.includes(TopicListColumn.TIME_CREATED) && <div className="tt-col-value hide-mobile">
-        <div>{formatDateTime(post.createdAt, { dateFormat: "none" })}</div>
-        <small>{formatDateTime(post.createdAt, { timeFormat: "none" })}</small>
-      </div>}
-    </div>)}
+      {
+        columns.includes(TopicListColumn.TIME_CREATED) && <div className="tt-col-value hide-mobile">
+          <div>{formatDateTime(post.createdAt, { dateFormat: "none" })}</div>
+          <small>{formatDateTime(post.createdAt, { timeFormat: "none" })}</small>
+        </div>
+      }
+    </div>)
+    }
 
     <LoginReminder />
 
@@ -103,7 +121,7 @@ const TopicList = ({
         </svg>
       </button>
     </div>
-  </div>
+  </div >
 }
 
 export default TopicList

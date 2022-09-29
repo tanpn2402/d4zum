@@ -3,7 +3,7 @@ import MobileMenu from "@components/MainHeader/mobile-menu"
 import PostSetting from "@components/PopupSetting/post-setting"
 import UserSetting from "@components/PopupSetting/user-setting"
 import SvgSprite from "@components/SvgSprite"
-import TopicList, { TopicListColumn } from "@components/TopicList"
+import TopicList, { ActionType, TopicListColumn } from "@components/TopicList"
 import IJwtAuthenticateData from "@interfaces/IJwtAuthenticateData"
 import IPost from "@interfaces/IPost"
 import IUser from "@interfaces/IUser"
@@ -14,7 +14,7 @@ import PublicationState from "enums/PublicationState"
 import jwtDecode from "jwt-decode"
 import type { GetServerSideProps, NextPage } from 'next'
 import Head from "next/head"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef } from "react"
 
 
 const PageMe: NextPage<Props> = ({
@@ -116,12 +116,21 @@ const PageMe: NextPage<Props> = ({
           </div>
           <div className="tab-content">
             <div className="tab-pane tt-indent-none show active" id="tt-tab-threads" role="tabpanel">
-              <TopicList posts={posts} columns={[
-                TopicListColumn.TITLE,
-                TopicListColumn.TOPIC,
-                TopicListColumn.STATE,
-                TopicListColumn.TIME_CREATED,
-              ]} />
+              <TopicList
+                posts={posts}
+                columns={[
+                  TopicListColumn.TITLE,
+                  TopicListColumn.TOPIC,
+                  TopicListColumn.STATE,
+                  TopicListColumn.TIME_CREATED,
+                  itsMe ? TopicListColumn.SETTING : null,
+                ].filter(e => e !== null)}
+                onActionClick={(type, value) => {
+                  if (type === ActionType.SETTING_CLICK) {
+                    postSettingRef?.current?.open?.(value as IPost)
+                  }
+                }}
+              />
             </div>
             <div className="tab-pane tt-indent-none" id="tt-tab-reactions" role="tabpanel">
               <div className="tt-topic-list">
