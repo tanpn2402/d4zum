@@ -2,9 +2,17 @@ import graphQL from "./api";
 import ICategory from "@interfaces/ICategory";
 import CategoryEntity from "@services/entity/Category.entity";
 import UtilParser from "./UtilParser";
+import IPost from "@interfaces/IPost";
+import ITag from "@interfaces/ITag";
+import TagEntity from "@services/entity/Tag.entity";
+import PostEntity from "@services/entity/Post.entity";
 
 export function parseCategory(category: CategoryEntity): ICategory {
-  return UtilParser<ICategory, CategoryEntity>(category)
+  return UtilParser<ICategory, CategoryEntity>(category, {
+    posts: category => category.attributes.posts?.data?.map?.(post => UtilParser<IPost, PostEntity>(post, {
+      tags: post => post.attributes.tags?.data?.map?.(tag => UtilParser<ITag, TagEntity>(tag))
+    }))
+  })
 }
 
 interface GetProps {
@@ -38,6 +46,23 @@ export async function get({
             slug
             description
             color
+            posts {
+              data {
+                id
+                attributes {
+                  title
+                  slug
+                  tags {
+                    data {
+                      id
+                      attributes {
+                        name
+                      }
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }

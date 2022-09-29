@@ -21,15 +21,15 @@ const MainMenu = () => {
     <nav>
       <ul>
         <li>
-          <Link href="/categories">
+          <Link href="/topics">
             <a><span>Chủ đề</span></a>
           </Link>
         </li>
-        <li>
+        {/* <li>
           <Link href="/trending">
             <a><span>Xu hướng</span></a>
           </Link>
-        </li>
+        </li> */}
         <DynamicMenu />
         {/* <li>
           <a href="page-single-user.html"><span>Pages</span></a>

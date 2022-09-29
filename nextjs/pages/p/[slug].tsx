@@ -276,13 +276,13 @@ const Topic: NextPage = ({
                 <div className="tt-item-tag">
                   <ul className="tt-list-badge">
                     {post.categories[0]?.name && <li>
-                      <Link href={"/category/" + post.categories[0]?.slug}>
+                      <Link href={"/topics/" + post.categories[0]?.slug}>
                         <a><span className="tt-color03 tt-badge">{post.categories[0]?.name}</span></a>
                       </Link>
                     </li>}
 
                     {post.tags?.map(tag => tag.name?.trim?.() === "" ? null : <li key={tag.id}>
-                      <Link href={"/tag/" + tag.name?.toLowerCase()}>
+                      <Link href={"/tags/" + encodeURIComponent(tag.name?.toLowerCase())}>
                         <a><span className="tt-badge">{tag.name}</span></a>
                       </Link>
                     </li>)}

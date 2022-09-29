@@ -5,14 +5,17 @@ import TagEntity from "@services/entity/Tag.entity";
 
 interface GetProps {
   name?: string | string[]
+  categoryId?: string
 }
 
 export async function get({
-  name
+  name,
+  categoryId
 }: GetProps): Promise<ITag[] | null> {
   let variables = {} as {
     names: string[],
-    name: string
+    name: string,
+    categoryId?: string
   }
   if (name) {
     if (Array.isArray(name)) {
@@ -22,17 +25,27 @@ export async function get({
       variables.name = name
     }
   }
+  if (categoryId) {
+    variables.categoryId = categoryId
+  }
   let resp = await graphQL<{
     tags: {
       data: TagEntity[]
     }
   }>(
-    `query query($names: [String], $name: String) {
+    `query query($categoryId: ID, $names: [String], $name: String) {
       tags (
         filters: {
           name: {
             in: $names,
             eq: $name
+          }
+          posts: {
+            categories: {
+              id: {
+                eq: $categoryId
+              }
+            }
           }
         }
         pagination: {

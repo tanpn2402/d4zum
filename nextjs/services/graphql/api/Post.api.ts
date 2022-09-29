@@ -19,6 +19,8 @@ type GetPostProps = {
   slug?: string
   userId?: string
   state?: PublicationState
+  categoryId?: string
+  tagName?: string
 }
 
 type PostGraphQLResponse = {
@@ -31,14 +33,11 @@ export async function get({
   id,
   slug,
   userId,
-  state
+  state,
+  categoryId,
+  tagName
 }: GetPostProps): Promise<IPost[]> {
-  let variables = {} as {
-    id?: string
-    slug?: string
-    userId?: string
-    state?: PublicationState
-  }
+  let variables = {} as GetPostProps
   if (id) {
     variables.id = id
   }
@@ -50,6 +49,12 @@ export async function get({
   }
   if (state) {
     variables.state = state
+  }
+  if (categoryId) {
+    variables.categoryId = categoryId
+  }
+  if (tagName) {
+    variables.tagName = tagName
   }
   let resp = await graphQL<PostGraphQLResponse>(queryPostSchema, {
     variables: variables
@@ -288,21 +293,22 @@ export async function publish({
   }
 }
 
-const queryPostSchema = `query query($id: ID, $slug: String, $userId: ID, $state: PublicationState) {
+const queryPostSchema = `query query(
+  $id: ID
+	$slug: String
+	$userId: ID
+	$state: PublicationState
+	$categoryId: ID
+	$tagName: String
+) {
   posts (
-    filters: {
-      id: {
-        eq: $id
-      }
-      slug: {
-        eq: $slug
-      }
-      user: {
-        id: {
-          eq: $userId
-        }
-      }
-    }
+		filters: {
+			id: { eq: $id }
+			slug: { eq: $slug }
+			user: { id: { eq: $userId } }
+			categories: { id: { eq: $categoryId } }
+			tags: { name: { containsi: $tagName } }
+		}
     pagination: {
       limit: -1
     }

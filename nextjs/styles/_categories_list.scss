@@ -23,7 +23,7 @@
 
 .tt-categories-list {
   .tt-item {
-    background-color: #ffffff;
+    background-color: var(--tt-item-even-bg);
     border-radius: 3px;
 
     .tt-item-header {
