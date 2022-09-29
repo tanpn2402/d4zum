@@ -3,86 +3,19 @@ import MobileMenu from "@components/MainHeader/mobile-menu"
 import PostSetting from "@components/PopupSetting/post-setting"
 import UserSetting from "@components/PopupSetting/user-setting"
 import SvgSprite from "@components/SvgSprite"
+import TopicList, { TopicListColumn } from "@components/TopicList"
 import IJwtAuthenticateData from "@interfaces/IJwtAuthenticateData"
 import IPost from "@interfaces/IPost"
 import IUser from "@interfaces/IUser"
 import { get as getPosts } from "@services/graphql/api/Post.api"
 import { getByUsername } from "@services/graphql/api/User.api"
-import { formatDateTime } from "@utils/formatter"
 import { getCookies } from "cookies-next"
 import PublicationState from "enums/PublicationState"
 import jwtDecode from "jwt-decode"
 import type { GetServerSideProps, NextPage } from 'next'
-import dynamic from "next/dynamic"
 import Head from "next/head"
-import Link from "next/link"
 import { useEffect, useRef, useState } from "react"
 
-
-
-const PostItem = ({
-  post: initialPost,
-  itsMe,
-  postSettingRef
-}: {
-  post: IPost,
-  itsMe: boolean,
-  postSettingRef: any
-}) => {
-  const [post, updatePost] = useState(initialPost)
-
-  return <div className="tt-item">
-    <div className="tt-col-avatar">
-      {!itsMe && <svg className="tt-icon">
-        <use xlinkHref={"#icon-ava-" + post.user?.name?.charAt?.(0)?.toLowerCase?.()} />
-      </svg>}
-
-      {itsMe && <svg className="tt-icon js-post-settings-btn" onClick={() => {
-        postSettingRef?.current?.open?.(post);
-      }}>
-        <use xlinkHref="#icon-settings_fill" />
-      </svg>}
-    </div>
-    <div className="tt-col-description">
-      <h6 className="tt-title">
-        <Link href={"/p/" + post.slug} >
-          <a>
-            {post.is_pinned && <svg className="tt-icon">
-              <use xlinkHref="#icon-pinned" />
-            </svg>}
-            {post.is_private && <svg className="tt-icon">
-              <use xlinkHref="#icon-locked" />
-            </svg>}
-            {post.title}
-          </a>
-        </Link>
-      </h6>
-      <div className="row align-items-center no-gutters">
-        <div className="col-12">
-          <ul className="tt-list-badge">
-            {post.tags?.map(tag => tag.name?.trim?.() === "" ? null : <li key={tag.id}>
-              <Link href={"/tag/" + tag.name?.toLowerCase()}>
-                <a><span className="tt-badge">{tag.name}</span></a>
-              </Link>
-            </li>)}
-          </ul>
-        </div>
-        <div className="col-1 ml-auto show-mobile">
-          <div className="tt-value">{formatDateTime(post.createdAt)}</div>
-        </div>
-      </div>
-    </div>
-    {post.categories[0]?.name && <div className="tt-col-category">
-      <Link href={"/category/" + post.categories[0]?.slug}>
-        <a><span className="tt-color03 tt-badge" style={{ backgroundColor: post.categories[0]?.color }}>{post.categories[0]?.name}</span></a>
-      </Link>
-    </div>}
-    <div className="tt-col-value">{post.publishedAt === null ? "PREVIEW" : "LIVE"}</div>
-    <div className="tt-col-value hide-mobile">
-      <small>{formatDateTime(post.createdAt, { timeFormat: "none" })}</small>
-    </div>
-  </div>
-}
 
 const PageMe: NextPage<Props> = ({
   posts,
@@ -183,26 +116,12 @@ const PageMe: NextPage<Props> = ({
           </div>
           <div className="tab-content">
             <div className="tab-pane tt-indent-none show active" id="tt-tab-threads" role="tabpanel">
-              <div className="tt-topic-list">
-                <div className="tt-list-header">
-                  <div className="tt-col-topic">Bài viết</div>
-                  <div className="tt-col-category">Chủ đề</div>
-                  <div className="tt-col-value hide-mobile">Trạng thái</div>
-                  <div className="tt-col-value">Thời gian</div>
-                </div>
-                {posts?.map?.(post => <PostItem key={post.id}
-                  post={post}
-                  itsMe={itsMe}
-                  postSettingRef={postSettingRef}
-                />)}
-                <div className="tt-row-btn">
-                  <button type="button" className="btn-icon js-topiclist-showmore">
-                    <svg className="tt-icon">
-                      <use xlinkHref="#icon-load_lore_icon" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
+              <TopicList posts={posts} columns={[
+                TopicListColumn.TITLE,
+                TopicListColumn.TOPIC,
+                TopicListColumn.STATE,
+                TopicListColumn.TIME_CREATED,
+              ]} />
             </div>
             <div className="tab-pane tt-indent-none" id="tt-tab-reactions" role="tabpanel">
               <div className="tt-topic-list">

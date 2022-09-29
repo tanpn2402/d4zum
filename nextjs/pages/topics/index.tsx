@@ -82,7 +82,7 @@ const PageTopic: NextPage<Props> = ({
                           }
                           return result
                         }, [])?.map?.(tag => <li>
-                          <Link href={"/tag/" + tag.name?.toLowerCase()}>
+                          <Link href={"/tags/" + encodeURIComponent(tag.name?.toLowerCase())}>
                             <a><span className="tt-badge">{tag.name}</span></a>
                           </Link>
                         </li>)}

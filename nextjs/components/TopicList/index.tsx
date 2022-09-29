@@ -7,24 +7,39 @@ const LoginReminder = dynamic(() => import("@components/LoginReminder"), {
   ssr: false
 })
 
+export enum TopicListColumn {
+  TITLE,
+  TOPIC,
+  REACTION,
+  COMMENT,
+  VIEW,
+  TIME_CREATED,
+  STATE
+}
+
 const TopicList = ({
-  posts
+  posts,
+  columns = [
+    TopicListColumn.TITLE,
+    TopicListColumn.TOPIC,
+    TopicListColumn.REACTION,
+    TopicListColumn.COMMENT,
+    TopicListColumn.TIME_CREATED
+  ]
 }: {
-  posts: IPost[]
+  posts: IPost[],
+  columns?: TopicListColumn[]
 }) => {
 
   return <div className="tt-topic-list">
     <div className="tt-list-header">
       <div className="tt-col-topic">Bài viết</div>
       <div className="tt-col-category">Chủ đề</div>
-      <div className="tt-col-value hide-mobile">Tương tác</div>
-      <div className="tt-col-value hide-mobile">Bình luận</div>
-      {/* <div className="tt-col-value hide-mobile">Views</div> */}
-      <div className="tt-col-value">Thời gian</div>
+      {columns.includes(TopicListColumn.REACTION) && <div className="tt-col-value hide-mobile">Tương tác</div>}
+      {columns.includes(TopicListColumn.COMMENT) && <div className="tt-col-value hide-mobile">Bình luận</div>}
+      {columns.includes(TopicListColumn.STATE) && <div className="tt-col-value hide-mobile">Trạng thái</div>}
+      {columns.includes(TopicListColumn.TIME_CREATED) && <div className="tt-col-value">Thời gian</div>}
     </div>
-    {/* <div className="tt-topic-alert tt-alert-default" role="alert">
-    <a href="#" target="_blank">4 new posts</a> are added recently, click here to load them.
-  </div> */}
 
     {posts && posts.map(post => <div key={post.id} className={`tt-item ${post.is_trending ? "tt-itemselect" : ""}`}>
       <div className="tt-col-avatar">
@@ -58,14 +73,11 @@ const TopicList = ({
                   <a><span className="tt-badge">{tag.name}</span></a>
                 </Link>
               </li>)}
-              {/* <li className="show-mobile"><a href="#"><span className="tt-color03 tt-badge">exchange</span></a></li>
-            <li><a href="#"><span className="tt-badge">themeforest</span></a></li>
-            <li><a href="#"><span className="tt-badge">elements</span></a></li> */}
             </ul>
           </div>
-          <div className="col-1 show-mobile">
+          {columns.includes(TopicListColumn.TIME_CREATED) && <div className="col-1 show-mobile">
             <div className="tt-value">{formatDateTime(post.createdAt)}</div>
-          </div>
+          </div>}
         </div>
       </div>
       {post.categories[0]?.name && <div className="tt-col-category">
@@ -73,13 +85,13 @@ const TopicList = ({
           <a><span className="tt-color03 tt-badge" style={{ backgroundColor: post.categories[0]?.color }}>{post.categories[0]?.name}</span></a>
         </Link>
       </div>}
-      <div className="tt-col-value  hide-mobile">{post.reactionCount > 9 ? "9+" : post.reactionCount}</div>
-      <div className="tt-col-value hide-mobile">{post.commentCount > 9 ? "9+" : post.commentCount}</div>
-      {/* <div className="tt-col-value  hide-mobile">12.6k</div> */}
-      <div className="tt-col-value hide-mobile">
+      {columns.includes(TopicListColumn.REACTION) && <div className="tt-col-value  hide-mobile">{post.reactionCount > 9 ? "9+" : post.reactionCount}</div>}
+      {columns.includes(TopicListColumn.COMMENT) && <div className="tt-col-value hide-mobile">{post.commentCount > 9 ? "9+" : post.commentCount}</div>}
+      {columns.includes(TopicListColumn.STATE) && <div className="tt-col-value">{post.publishedAt === null ? "PREVIEW" : "LIVE"}</div>}
+      {columns.includes(TopicListColumn.TIME_CREATED) && <div className="tt-col-value hide-mobile">
         <div>{formatDateTime(post.createdAt, { dateFormat: "none" })}</div>
         <small>{formatDateTime(post.createdAt, { timeFormat: "none" })}</small>
-      </div>
+      </div>}
     </div>)}
 
     <LoginReminder />
