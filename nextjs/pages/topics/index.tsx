@@ -49,7 +49,7 @@ const PageTopic: NextPage<Props> = ({
         <div className="tt-categories-list">
           <div className="row">
             {categories?.map?.(category => {
-              return <div className="col-md-6 col-lg-4">
+              return <div key={category.id} className="col-md-6 col-lg-4">
                 <div className="tt-item">
                   <div className="tt-item-header">
                     <ul className="tt-list-badge">
@@ -81,7 +81,7 @@ const PageTopic: NextPage<Props> = ({
                             })
                           }
                           return result
-                        }, [])?.map?.(tag => <li>
+                        }, [])?.map?.(tag => <li key={tag.id}>
                           <Link href={"/tags/" + encodeURIComponent(tag.name?.toLowerCase())}>
                             <a><span className="tt-badge">{tag.name}</span></a>
                           </Link>
