@@ -95,6 +95,12 @@
       "relation": "oneToMany",
       "target": "api::comment.comment",
       "mappedBy": "user"
+    },
+    "groups": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::group.group",
+      "mappedBy": "users"
     }
   }
 }

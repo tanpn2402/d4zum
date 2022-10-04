@@ -78,6 +78,16 @@
     "allow_comment_by_picture": {
       "type": "boolean",
       "default": false
+    },
+    "is_internal": {
+      "type": "boolean",
+      "default": false
+    },
+    "groups": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::group.group",
+      "inversedBy": "posts"
     }
   }
 }
