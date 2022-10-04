@@ -1,6 +1,6 @@
 import BaseAttribute from "./Base.attribute"
 
-interface PostAttribute<ICategory, IUser, ITag, IReaction, IComment> extends BaseAttribute {
+interface PostAttribute<ICategory, IUser, ITag, IReaction, IComment, IGroup> extends BaseAttribute {
   title: string
   description: string
   slug: string
@@ -8,6 +8,7 @@ interface PostAttribute<ICategory, IUser, ITag, IReaction, IComment> extends Bas
   categories?: ICategory,
   user?: IUser,
   tags?: ITag,
+  groups?: IGroup
   is_locked?: boolean
   is_blocked?: boolean
   is_trending?: boolean

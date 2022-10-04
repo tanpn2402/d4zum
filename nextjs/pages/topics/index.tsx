@@ -7,6 +7,10 @@ import SvgSprite from "@components/SvgSprite"
 import Head from "next/head"
 import ITag from "@interfaces/ITag"
 import Link from "next/link"
+import { getCookies } from "cookies-next"
+import IJwtAuthenticateData from "@interfaces/IJwtAuthenticateData"
+import jwtDecode from "jwt-decode"
+import { isInternalIpAddress } from "@utils/helper"
 
 const PageTopic: NextPage<Props> = ({
   categories
@@ -105,8 +109,19 @@ type Props = {
 }
 
 export const getServerSideProps: GetServerSideProps<Props> = async (context) => {
+  const cookies = getCookies({ req: context.req, res: context.res })
+  let jwtData: IJwtAuthenticateData = null, groupIds = [] as string[]
+  if (isInternalIpAddress(context.req.headers["host"])) {
+    groupIds = process.env.INTERNAL_GROUP_IDS?.split?.(",") || []
+  }
+  if (cookies["jwt"]) {
+    jwtData = jwtDecode(cookies["jwt"]?.toString?.())
+    groupIds = groupIds.concat(jwtData?.groups?.map?.(group => group.id) || [])
+  }
   const [categories] = await Promise.all([
-    getCategories({})
+    getCategories({
+      postGroupIds: groupIds
+    })
   ])
 
   return {

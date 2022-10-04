@@ -9,6 +9,7 @@ import IPost from "@interfaces/IPost"
 import IUser from "@interfaces/IUser"
 import { get as getPosts } from "@services/graphql/api/Post.api"
 import { getByUsername } from "@services/graphql/api/User.api"
+import { isInternalIpAddress } from "@utils/helper"
 import { getCookies } from "cookies-next"
 import PublicationState from "enums/PublicationState"
 import jwtDecode from "jwt-decode"
@@ -589,10 +590,7 @@ interface Props {
 }
 
 export const getServerSideProps: GetServerSideProps<Props> = async (context) => {
-  let cookies = getCookies({
-    req: context.req,
-    res: context.res,
-  })
+  let cookies = getCookies({ req: context.req, res: context.res })
 
   if ((!cookies["jwt"] || !cookies["secret"])) {
     return {
@@ -605,7 +603,10 @@ export const getServerSideProps: GetServerSideProps<Props> = async (context) => 
 
   const jwtData: IJwtAuthenticateData = jwtDecode(cookies["jwt"]?.toString?.())
   const userData = await getByUsername(jwtData.username)
-
+  let groupIds = [] as string[]
+  if (isInternalIpAddress(context.req.headers["host"])) {
+    groupIds = process.env.INTERNAL_GROUP_IDS?.split?.(",") || []
+  }
   if (!jwtData) {
     return {
       redirect: {
@@ -614,10 +615,14 @@ export const getServerSideProps: GetServerSideProps<Props> = async (context) => 
       },
     }
   }
+  else {
+    groupIds = groupIds.concat(jwtData?.groups?.map?.(group => group.id) || [])
+  }
 
   const posts = await getPosts({
     userId: jwtData?.id,
-    state: PublicationState.PREVIEW
+    state: PublicationState.PREVIEW,
+    groupIds
   })
 
   return {

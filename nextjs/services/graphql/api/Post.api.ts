@@ -1,10 +1,12 @@
 import ICategory from "@interfaces/ICategory";
 import IComment from "@interfaces/IComment";
+import IGroup from "@interfaces/IGroup";
 import IPost from "@interfaces/IPost";
 import IReaction from "@interfaces/IReaction";
 import ITag from "@interfaces/ITag";
 import CategoryEntity from "@services/entity/Category.entity";
 import CommentEntity from "@services/entity/Comment.entity";
+import GroupEntity from "@services/entity/Group.entity";
 import PostEntity from "@services/entity/Post.entity";
 import ReactionEntity from "@services/entity/Reaction.entity";
 import TagEntity from "@services/entity/Tag.entity";
@@ -14,6 +16,30 @@ import graphQL from './api';
 import { parseUser } from "./User.api";
 import UtilParser from './UtilParser';
 
+type ParseOption = {
+  comments?: boolean | null
+  reactions?: boolean | null
+  groups?: boolean | null
+}
+export function parsePost(post: PostEntity, options: ParseOption = {
+  comments: true,
+  groups: true,
+  reactions: true
+}): IPost {
+  return UtilParser<IPost, PostEntity>(post, {
+    tags: post => post.attributes.tags?.data?.map?.(tag => UtilParser<ITag, TagEntity>(tag)),
+    categories: post => post.attributes.categories?.data?.map?.(category => UtilParser<ICategory, CategoryEntity>(category)),
+    user: post => parseUser(post.attributes.user?.data),
+    comments: post => !options?.comments ? [] : post.attributes.comments?.data?.map?.(comment => UtilParser<IComment, CommentEntity>(comment, {
+      user: cmt => parseUser(cmt.attributes.user?.data),
+    })),
+    reactions: post => !options?.reactions ? [] : post.attributes.reactions?.data?.map?.(reaction => UtilParser<IReaction, ReactionEntity>(reaction, {
+      user: cmt => parseUser(cmt.attributes.user?.data),
+    })),
+    groups: post => !options?.groups ? [] : post.attributes.groups?.data?.map?.(group => UtilParser<IGroup, GroupEntity>(group))
+  })
+}
+
 type GetPostProps = {
   id?: string
   slug?: string
@@ -21,6 +47,7 @@ type GetPostProps = {
   state?: PublicationState
   categoryId?: string
   tagName?: string
+  groupIds?: string[]
 }
 
 type PostGraphQLResponse = {
@@ -35,7 +62,8 @@ export async function get({
   userId,
   state,
   categoryId,
-  tagName
+  tagName,
+  groupIds
 }: GetPostProps): Promise<IPost[]> {
   let variables = {} as GetPostProps
   if (id) {
@@ -56,17 +84,18 @@ export async function get({
   if (tagName) {
     variables.tagName = tagName
   }
+  if (groupIds) {
+    variables.groupIds = groupIds
+  }
   let resp = await graphQL<PostGraphQLResponse>(queryPostSchema, {
     variables: variables
   })
 
   let posts: IPost[] = resp.data?.posts?.data?.map?.((post: PostEntity) => {
-    let p = UtilParser<IPost, PostEntity>(post, {
-      tags: post => post.attributes.tags?.data?.map?.(tag => UtilParser<ITag, TagEntity>(tag)),
-      categories: post => post.attributes.categories?.data?.map?.(category => UtilParser<ICategory, CategoryEntity>(category)),
-      user: post => parseUser(post.attributes.user?.data),
-      comments: () => [],
-      reactions: () => []
+    let p = parsePost(post, {
+      comments: false,
+      groups: true,
+      reactions: false
     })
 
     p.commentCount = post.attributes.comments?.data?.length
@@ -300,6 +329,7 @@ const queryPostSchema = `query query(
 	$state: PublicationState
 	$categoryId: ID
 	$tagName: String
+  $groupIds: [ID]
 ) {
   posts (
 		filters: {
@@ -308,6 +338,22 @@ const queryPostSchema = `query query(
 			user: { id: { eq: $userId } }
 			categories: { id: { eq: $categoryId } }
 			tags: { name: { containsi: $tagName } }
+      or: [
+        {
+          groups: {
+            id: {
+              eq: null
+            }
+          }
+        },
+        {
+          groups: {
+            id: {
+              in: $groupIds
+            }
+          }
+        }
+      ]
 		}
     pagination: {
       limit: -1
@@ -346,6 +392,15 @@ const queryPostSchema = `query query(
               slug
               name
               color
+            }
+          }
+        }
+        groups {
+          data {
+            id
+            attributes {
+              slug
+              name
             }
           }
         }

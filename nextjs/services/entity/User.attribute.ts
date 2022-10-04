@@ -1,6 +1,6 @@
 import BaseAttribute from "./Base.attribute"
 
-interface UserAttribute<IPicture> extends BaseAttribute {
+interface UserAttribute<IPicture, IGroup> extends BaseAttribute {
   blocked: boolean
   confirmed: boolean
   email: string
@@ -9,6 +9,7 @@ interface UserAttribute<IPicture> extends BaseAttribute {
   provider: string
   username: string
   phoneNumber?: string
+  groups?: IGroup
 }
 
 export default UserAttribute

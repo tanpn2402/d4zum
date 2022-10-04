@@ -1,3 +1,4 @@
+import IGroup from "./IGroup"
 import IPhoto from "./IPhoto"
 
 interface IJwtAuthenticateData {
@@ -6,6 +7,7 @@ interface IJwtAuthenticateData {
   name: string
   email: string
   picture?: IPhoto
+  groups?: IGroup[]
 }
 
 export default IJwtAuthenticateData

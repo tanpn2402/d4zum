@@ -1,14 +1,25 @@
+import IGroup from "@interfaces/IGroup";
 import IPhoto from "@interfaces/IPhoto";
 import IUser from "@interfaces/IUser";
+import GroupEntity from "@services/entity/Group.entity";
 import UploadFileEntity from "@services/entity/UploadFile.entity";
 import UserEntity from "@services/entity/User.entity";
 import UserPermissionEntity from "@services/entity/UserPermission.entity";
 import graphQL from "./api";
 import UtilParser from "./UtilParser";
 
-export function parseUser(user: UserEntity): IUser {
+type ParseOption = {
+  picture?: boolean
+  groups?: boolean
+}
+
+export function parseUser(user: UserEntity, options: ParseOption = {
+  groups: false,
+  picture: true
+}): IUser {
   return UtilParser<IUser, UserEntity>(user, {
-    picture: user => UtilParser<IPhoto, UploadFileEntity>(user.attributes.picture?.data)
+    picture: user => !options?.picture ? null : UtilParser<IPhoto, UploadFileEntity>(user.attributes.picture?.data),
+    groups: user => !options?.groups ? [] : user.attributes.groups?.data?.map?.(group => UtilParser<IGroup, GroupEntity>(group))
   })
 }
 
@@ -17,6 +28,7 @@ interface UserPermissionInputProps {
   password: string
   email?: string
   name?: string
+  groups?: string[]
 }
 
 export async function validatePassword({
@@ -57,7 +69,8 @@ export async function create({
   password,
   username,
   email,
-  name
+  name,
+  groups
 }: UserPermissionInputProps): Promise<{ jwt?: string, data: IUser } | null> {
   let resp = await graphQL<{
     user: {
@@ -73,6 +86,11 @@ export async function create({
             username
             name
             email
+            groups {
+              data {
+                id
+              }
+            }
           }
         }
       }
@@ -82,7 +100,8 @@ export async function create({
         "username": username,
         "password": password,
         "email": email,
-        "name": name
+        "name": name,
+        "groups": groups || []
       }
     }
   }, process.env.GRAPHQL_BEARER_TOKEN_WRITE)
@@ -95,7 +114,10 @@ export async function create({
 
     return {
       jwt: r.data?.user?.jwt,
-      data: parseUser(resp.data?.user?.data)
+      data: parseUser(resp.data?.user?.data, {
+        picture: false,
+        groups: true
+      })
     }
   }
   return null
@@ -144,6 +166,11 @@ async function getOne(p: {
                 }
               }
             }
+            groups {
+              data {
+                id
+              }
+            }
           }
         }
       }
@@ -156,8 +183,9 @@ async function getOne(p: {
   })
 
   if (!resp.errors) {
-    return UtilParser<IUser, UserEntity>(resp.data?.users?.data?.[0], {
-      picture: user => UtilParser<IPhoto, UploadFileEntity>(user.attributes.picture?.data)
+    return parseUser(resp.data?.users?.data?.[0], {
+      picture: true,
+      groups: true
     })
   }
   else {

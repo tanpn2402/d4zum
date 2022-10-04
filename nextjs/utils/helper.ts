@@ -131,3 +131,7 @@ export function generateSlug(s: string, opt: {
 
   return (opt.lowercase ? s.toLowerCase() : s) + generateUuid("-xxxx-xx2xx");
 }
+
+export function isInternalIpAddress(ip: string) {
+  return /(^127\.)|(^192\.168\.)|(^10\.)|(^172\.1[6-9]\.)|(^172\.2[0-9]\.)|(^172\.3[0-1]\.)|(^::1$)|(^[fF][cCdD])/.test(ip)
+}

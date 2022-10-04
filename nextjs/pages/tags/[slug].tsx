@@ -1,17 +1,17 @@
-import ICategory from "@interfaces/ICategory"
-import { get as getCategories } from "@services/graphql/api/Category.api"
 import { GetServerSideProps, NextPage } from "next"
 import MainHeader from "@components/MainHeader"
 import MobileMenu from "@components/MainHeader/mobile-menu"
 import SvgSprite from "@components/SvgSprite"
 import Head from "next/head"
 import ITag from "@interfaces/ITag"
-import Link from "next/link"
 import { ParsedUrlQuery } from "querystring"
 import { get as getPosts } from "@services/graphql/api/Post.api"
-import { get as getTags } from "@services/graphql/api/Tag.api"
 import IPost from "@interfaces/IPost"
 import TopicList from "@components/TopicList"
+import IJwtAuthenticateData from "@interfaces/IJwtAuthenticateData"
+import jwtDecode from "jwt-decode"
+import { getCookies } from "cookies-next"
+import { isInternalIpAddress } from "@utils/helper"
 
 const PageSingleTag: NextPage<Props> = ({
   tag,
@@ -64,10 +64,20 @@ interface IQueryParams extends ParsedUrlQuery {
 
 export const getServerSideProps: GetServerSideProps<Props> = async (context) => {
   const { slug: tagName } = context.query as IQueryParams;
+  const cookies = getCookies({ req: context.req, res: context.res })
+  let jwtData: IJwtAuthenticateData = null, groupIds = [] as string[]
+  if (isInternalIpAddress(context.req.headers["host"])) {
+    groupIds = process.env.INTERNAL_GROUP_IDS?.split?.(",") || []
+  }
+  if (cookies["jwt"]) {
+    jwtData = jwtDecode(cookies["jwt"]?.toString?.())
+    groupIds = groupIds.concat(jwtData?.groups?.map?.(group => group.id) || [])
+  }
 
   const [posts] = await Promise.all([
     getPosts({
-      tagName: decodeURIComponent(tagName)
+      tagName: decodeURIComponent(tagName),
+      groupIds
     }),
   ])
 

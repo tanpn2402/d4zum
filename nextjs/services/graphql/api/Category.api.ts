@@ -17,21 +17,48 @@ export function parseCategory(category: CategoryEntity): ICategory {
 
 interface GetProps {
   slug?: string
+  postGroupIds?: string[]
 }
 
 export async function get({
-  slug
+  slug,
+  postGroupIds
 }: GetProps): Promise<ICategory[] | null> {
+  let variables = {} as GetProps
+  if (slug) {
+    variables.slug = slug
+  }
+  if (postGroupIds) {
+    variables.postGroupIds = postGroupIds
+  }
   let resp = await graphQL<{
     categories: {
       data: CategoryEntity[]
     }
   }>(
-    `query query($slug: String) {
+    `query query($slug: String, $postGroupIds: [ID]) {
       categories (
         filters: {
           slug: {
             eq: $slug
+          }
+          posts: {
+            or: [
+              {
+                groups: {
+                  id: {
+                    eq: null
+                  }
+                }
+              },
+              {
+                groups: {
+                  id: {
+                    in: $postGroupIds
+                  }
+                }
+              }
+            ]
           }
         }
         sort: "createdAt:ASC"
@@ -67,9 +94,7 @@ export async function get({
         }
       }
     }`, {
-    variables: {
-      "slug": slug
-    }
+    variables: variables
   })
 
   if (resp.data?.categories?.data) {

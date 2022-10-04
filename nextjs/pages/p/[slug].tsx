@@ -11,6 +11,7 @@ import IReaction from "@interfaces/IReaction"
 import { EWSNotiType } from "@lib/ws/enum"
 import { get as getPosts, getMeta as getPostMeta } from "@services/graphql/api/Post.api"
 import { formatDateTime } from "@utils/formatter"
+import { isInternalIpAddress } from "@utils/helper"
 import { getCookies } from "cookies-next"
 import PublicationState from "enums/PublicationState"
 import ReactionType from "enums/ReactionType"
@@ -468,8 +469,17 @@ interface IQueryParams extends ParsedUrlQuery {
 
 export const getServerSideProps: GetServerSideProps<Props> = async (context) => {
   const { slug } = context.query as IQueryParams;
+  let cookies = getCookies({ req: context.req, res: context.res })
+  let jwtData: IJwtAuthenticateData = null, groupIds = [] as string[]
+  if (isInternalIpAddress(context.req.headers["host"])) {
+    groupIds = process.env.INTERNAL_GROUP_IDS?.split?.(",") || []
+  }
+  if (cookies["jwt"]) {
+    jwtData = jwtDecode(cookies["jwt"]?.toString?.())
+    groupIds = groupIds.concat(jwtData?.groups?.map?.(group => group.id) || [])
+  }
   const [posts, meta] = await Promise.all([
-    getPosts({ slug, state: PublicationState.PREVIEW }),
+    getPosts({ slug, state: PublicationState.PREVIEW, groupIds }),
     getPostMeta({ slug })
   ])
 
@@ -482,11 +492,6 @@ export const getServerSideProps: GetServerSideProps<Props> = async (context) => 
     }
   }
 
-  let cookies = getCookies({
-    req: context.req,
-    res: context.res,
-  })
-
   if (posts[0].is_private) {
     if ((!cookies["jwt"] || !cookies["secret"])) {
       return {
@@ -498,21 +503,18 @@ export const getServerSideProps: GetServerSideProps<Props> = async (context) => 
     }
   }
 
-  let isPostOwner = false, myReaction: IReaction = null, jwtData: IJwtAuthenticateData = null
-  if (cookies["jwt"]) {
-    jwtData = jwtDecode(cookies["jwt"]?.toString?.())
-    isPostOwner = jwtData && jwtData.id === posts[0]?.user?.id
-    if (posts[0].publishedAt === null && !isPostOwner) {
-      return {
-        redirect: {
-          destination: '/private-post',
-          permanent: false,
-        },
-      }
+  let myReaction: IReaction = null
+  let isPostOwner = jwtData && jwtData.id === posts[0]?.user?.id
+  if (posts[0].publishedAt === null && !isPostOwner) {
+    return {
+      redirect: {
+        destination: '/private-post',
+        permanent: false,
+      },
     }
-    if (jwtData.id) {
-      myReaction = meta?.reactions?.filter?.(reaction => reaction.user?.id === jwtData.id)[0] ?? null
-    }
+  }
+  if (jwtData?.id) {
+    myReaction = meta?.reactions?.filter?.(reaction => reaction.user?.id === jwtData.id)[0] ?? null
   }
 
 

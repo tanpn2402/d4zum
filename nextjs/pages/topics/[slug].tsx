@@ -12,6 +12,10 @@ import { get as getPosts } from "@services/graphql/api/Post.api"
 import { get as getTags } from "@services/graphql/api/Tag.api"
 import IPost from "@interfaces/IPost"
 import TopicList from "@components/TopicList"
+import { getCookies } from "cookies-next"
+import IJwtAuthenticateData from "@interfaces/IJwtAuthenticateData"
+import jwtDecode from "jwt-decode"
+import { isInternalIpAddress } from "@utils/helper"
 
 const PageSingleTopic: NextPage<Props> = ({
   tags,
@@ -81,7 +85,7 @@ const PageSingleTopic: NextPage<Props> = ({
           <div className="tt-innerwrapper">
             <h6 className="tt-title">Các TAGS</h6>
             <ul className="tt-list-badge">
-              {tags?.map?.(tag => <li>
+              {tags?.map?.(tag => <li key={tag.id}>
                 <Link href={"/tags/" + encodeURIComponent(tag.name?.toLowerCase())}>
                   <a><span className="tt-badge">{tag.name}</span></a>
                 </Link>
@@ -108,9 +112,19 @@ interface IQueryParams extends ParsedUrlQuery {
 
 export const getServerSideProps: GetServerSideProps<Props> = async (context) => {
   const { slug } = context.query as IQueryParams;
+  const cookies = getCookies({ req: context.req, res: context.res })
+  let jwtData: IJwtAuthenticateData = null, groupIds = [] as string[]
+  if (isInternalIpAddress(context.req.headers["host"])) {
+    groupIds = process.env.INTERNAL_GROUP_IDS?.split?.(",") || []
+  }
+  if (cookies["jwt"]) {
+    jwtData = jwtDecode(cookies["jwt"]?.toString?.())
+    groupIds = groupIds.concat(jwtData?.groups?.map?.(group => group.id) || [])
+  }
   const [categories] = await Promise.all([
     getCategories({
-      slug
+      slug,
+      postGroupIds: groupIds
     })
   ])
 
@@ -125,7 +139,8 @@ export const getServerSideProps: GetServerSideProps<Props> = async (context) => 
 
   const [posts, tags] = await Promise.all([
     getPosts({
-      categoryId: categories[0].id
+      categoryId: categories[0].id,
+      groupIds: groupIds
     }),
     getTags({
       categoryId: categories[0].id

@@ -3,6 +3,7 @@ import IPost from "@interfaces/IPost"
 import IUser from "@interfaces/IUser"
 import { get as getPosts } from "@services/graphql/api/Post.api"
 import { getByUsername } from "@services/graphql/api/User.api"
+import { isInternalIpAddress } from "@utils/helper"
 import { getCookies } from "cookies-next"
 import PublicationState from "enums/PublicationState"
 import jwtDecode from "jwt-decode"
@@ -30,11 +31,7 @@ interface IQueryParams extends ParsedUrlQuery {
 
 export const getServerSideProps: GetServerSideProps<Props> = async (context) => {
   const { username } = context.query as IQueryParams;
-  let cookies = getCookies({
-    req: context.req,
-    res: context.res,
-  })
-
+  const cookies = getCookies({ req: context.req, res: context.res })
   const userData = await getByUsername(username)
   if (!userData || !userData.id) {
     return {
@@ -45,15 +42,20 @@ export const getServerSideProps: GetServerSideProps<Props> = async (context) => 
     }
   }
 
-  let itsMe = false
+  let itsMe = false, groupIds = [] as string[]
+  if (isInternalIpAddress(context.req.headers["host"])) {
+    groupIds = process.env.INTERNAL_GROUP_IDS?.split?.(",") || []
+  }
   if (cookies["jwt"]) {
     const jwtData: IJwtAuthenticateData = jwtDecode(cookies["jwt"]?.toString?.())
     itsMe = jwtData.id === userData.id
+    groupIds = groupIds.concat(jwtData?.groups?.map?.(group => group.id) || [])
   }
 
   const posts = await getPosts({
     userId: userData?.id,
-    state: PublicationState.LIVE
+    state: PublicationState.LIVE,
+    groupIds
   })
 
   return {

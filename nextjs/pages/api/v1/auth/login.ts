@@ -5,6 +5,9 @@ import type { NextApiRequest, NextApiResponse } from 'next'
 import JWT from "jsonwebtoken"
 import IJwtAuthenticateData from "@interfaces/IJwtAuthenticateData"
 import IUser from "@interfaces/IUser"
+import { LoggerManager } from "@utils/logger"
+
+const LOGGER = LoggerManager.getLogger(__filename)
 
 type Data = {
   name: string
@@ -33,7 +36,7 @@ export default async function handler(
 ) {
   if (req.method === "POST" && req.headers["content-type"] === "application/x-www-form-urlencoded") {
     const body: LoginReqBody = req.body;
-    console.log("Req login", body);
+    LOGGER.info("Req login", body)
 
     // validate
     if (!validateReqBody(body)) {
@@ -63,15 +66,18 @@ export default async function handler(
           email: resp.data?.user?.data?.email,
           picture: user.picture,
           name: user.name,
-          username: resp.data?.user?.data?.username
+          username: resp.data?.user?.data?.username,
+          groups: user.groups
         }
 
         const jwtToken = JWT.sign(jwtData, process.env.JWT_SECRET_KEY, {
           expiresIn: "30d"
         })
 
-        setCookie("jwt", jwtToken, { req, res })
-        setCookie("secret", resp.data?.user?.jwt, { req, res })
+        LOGGER.info("Logged user", user, "token", jwtToken)
+        // cookies are valid in 30d
+        setCookie("jwt", jwtToken, { req, res, maxAge: 30 * 24 * 60 * 60 })
+        setCookie("secret", resp.data?.user?.jwt, { req, res, maxAge: 30 * 24 * 60 * 60 })
         res.redirect(302, body.cbUrl || "/");
       }
     }

@@ -1,6 +1,7 @@
 import BaseEntity from "./Base.entity"
 import CategoryEntity from "./Category.entity"
 import CommentEntity from "./Comment.entity"
+import GroupEntity from "./Group.entity"
 import PostAttribute from "./Post.attribute"
 import ReactionEntity from "./Reaction.entity"
 import RelationResponse from "./RelationResponse.entity"
@@ -13,7 +14,8 @@ interface PostEntity extends BaseEntity<
     RelationResponse<UserEntity>,
     RelationResponse<TagEntity[]>,
     RelationResponse<ReactionEntity[]>,
-    RelationResponse<CommentEntity[]>
+    RelationResponse<CommentEntity[]>,
+    RelationResponse<GroupEntity[]>
   >
 > { }
 

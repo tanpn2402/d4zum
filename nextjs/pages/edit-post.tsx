@@ -34,10 +34,8 @@ interface IQueryParams extends ParsedUrlQuery {
 
 export const getServerSideProps: GetServerSideProps<Props> = async (context) => {
   const { slug } = context.query as IQueryParams;
-  let cookies = getCookies({
-    req: context.req,
-    res: context.res,
-  })
+  let cookies = getCookies({ req: context.req, res: context.res })
+  let jwtData: IJwtAuthenticateData = jwtDecode(cookies["jwt"].toString())
 
   if (!cookies["jwt"]) {
     return {
@@ -52,24 +50,25 @@ export const getServerSideProps: GetServerSideProps<Props> = async (context) => 
     getTags({}),
     getPosts({
       slug: slug,
-      state: PublicationState.PREVIEW
+      state: PublicationState.PREVIEW,
+      groupIds: jwtData?.groups?.map?.(group => group.id)
     })
   ])
 
   if (!posts?.[0]) {
     return {
       redirect: {
-        destination: '/404',
+        destination: '/404?cb=/edit-post?slug=' + encodeURIComponent(slug),
         permanent: false,
       },
     }
   }
 
-  let jwtData: IJwtAuthenticateData = jwtDecode(cookies["jwt"].toString())
+
   if (posts[0].user?.id !== jwtData.id) {
     return {
       redirect: {
-        destination: '/404',
+        destination: '/404?cb=/edit-post?slug=' + encodeURIComponent(slug),
         permanent: false,
       },
     }
