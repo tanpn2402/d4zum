@@ -46,7 +46,9 @@ export const getServerSideProps: GetServerSideProps<Props> = async (context) => 
     }
   }
   const [categories, tags, posts] = await Promise.all([
-    getCategories({}),
+    getCategories({
+      postGroupIds: jwtData?.groups?.map?.(group => group.id)
+    }),
     getTags({}),
     getPosts({
       slug: slug,

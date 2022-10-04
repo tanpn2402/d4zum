@@ -14,9 +14,17 @@ class PushlishApiHandler extends BaseApiHandler<IPost> {
   public async post(): Promise<number | IPost> {
     const body = this.req.body as IPost;
     LOGGER.info("POST", body);
-    let posts = await get({ slug: body.slug, state: PublicationState.PREVIEW })
+    let posts = await get({
+      slug: body.slug,
+      state: PublicationState.PREVIEW,
+      groupIds: this.req.jwt.groups?.map?.(group => group.id)
+    })
     if (posts?.length === 0) {
-      posts = await get({ slug: body.slug, state: PublicationState.LIVE })
+      posts = await get({
+        slug: body.slug,
+        state: PublicationState.LIVE,
+        groupIds: this.req.jwt.groups?.map?.(group => group.id)
+      })
     }
 
     if (posts?.length === 0) {
@@ -26,7 +34,8 @@ class PushlishApiHandler extends BaseApiHandler<IPost> {
       return 403
     }
     let resp = await publish({
-      slug: body.slug
+      slug: body.slug,
+      groupIds: this.req.jwt.groups?.map?.(group => group.id)
     })
     return resp
   }

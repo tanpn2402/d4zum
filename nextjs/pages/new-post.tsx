@@ -13,6 +13,8 @@ import { useRouter } from "next/router"
 import IPost from "@interfaces/IPost"
 import initEditor from "@components/Editor/init"
 import useStateRef from "@hooks/useStateRef"
+import IJwtAuthenticateData from "@interfaces/IJwtAuthenticateData"
+import jwtDecode from "jwt-decode"
 
 const PageNewPost: NextPage<Props> = ({
   secret,
@@ -252,11 +254,8 @@ type Props = {
 }
 
 export const getServerSideProps: GetServerSideProps<Props> = async (context) => {
-  let cookies = getCookies({
-    req: context.req,
-    res: context.res,
-  })
-
+  let cookies = getCookies({ req: context.req, res: context.res })
+  let jwtData: IJwtAuthenticateData = jwtDecode(cookies["jwt"].toString())
   if (!cookies["jwt"]) {
     return {
       redirect: {
@@ -266,7 +265,9 @@ export const getServerSideProps: GetServerSideProps<Props> = async (context) => 
     }
   }
   const [categories, tags] = await Promise.all([
-    getCategories({}),
+    getCategories({
+      postGroupIds: jwtData?.groups?.map?.(group => group.id)
+    }),
     getTags({})
   ])
 

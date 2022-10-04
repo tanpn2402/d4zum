@@ -298,13 +298,15 @@ export async function update({
 }
 
 export async function publish({
-  slug
+  slug,
+  groupIds
 }: {
   id?: string
   slug: string
+  groupIds?: string[]
 }): Promise<IPost | null> {
 
-  let posts = await get({ slug, state: PublicationState.PREVIEW })
+  let posts = await get({ slug, groupIds, state: PublicationState.PREVIEW })
   if (posts[0]) {
     let resp = await update({
       id: posts[0].id,

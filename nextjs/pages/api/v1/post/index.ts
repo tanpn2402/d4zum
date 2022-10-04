@@ -75,9 +75,17 @@ class PostApiHandler extends BaseApiHandler<IPost> {
     const tags = await this.saveTags(body.tags)
 
     if (body.id) {
-      let posts = await get({ id: body.id, state: PublicationState.PREVIEW })
+      let posts = await get({
+        id: body.id,
+        state: PublicationState.PREVIEW,
+        groupIds: this.req.jwt.groups?.map?.(group => group.id)
+      })
       if (posts?.length === 0) {
-        posts = await get({ id: body.id, state: PublicationState.LIVE })
+        posts = await get({
+          id: body.id,
+          state: PublicationState.LIVE,
+          groupIds: this.req.jwt.groups?.map?.(group => group.id)
+        })
       }
 
       if (posts?.length === 0) {
