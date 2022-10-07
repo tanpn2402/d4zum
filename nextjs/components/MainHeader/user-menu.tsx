@@ -99,24 +99,21 @@ const UserNotification = () => {
     console.log("Connecting to ws");
     // @ts-ignore
     window.WebSocket = window.WebSocket || window.MozWebSocket
+    const _wsUrl = new URL(wsUrl)
 
-    if (window.WebSocket) {
+    if (window.WebSocket && (
+      (_wsUrl.protocol === "wss" && window.location.protocol === "https") ||
+      (_wsUrl.protocol === "ws" && window.location.protocol === "http"))
+    ) {
       // open connection
       var connection = new WebSocket(wsUrl + `?type=${EWSNotiType.NOTIFICATION.toString()}`);
-
       connection.onopen = function () {
-        // just in there were connection opened...
+        console.log("Connected to ws", wsUrl);
       };
-
       connection.onerror = function (error) {
-        // just in there were some problems with connection...
+        console.log("Connect to ws is error", error);
       };
-
-      // most important part - incoming messages
       connection.onmessage = function (message) {
-        // try to parse JSON message. Because we know that the server always returns
-        // JSON this should work without any problem but we should make sure that
-        // the massage is not chunked or otherwise damaged.
         try {
           var json = JSON.parse(message.data);
         } catch (e) {
@@ -154,6 +151,9 @@ const UserNotification = () => {
           // ignore other messages
         }
       };
+    }
+    else {
+      console.log("Connect to ws is failed, caused by WebSocket is not support or protocol is not suitable");
     }
   }, [wsToken, wsUrl])
 
