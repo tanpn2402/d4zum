@@ -59,6 +59,25 @@ services:
     links:
       - "d4zum.postgres:d4zum.postgres"
 
+  # tunnel
+  d4zum.tunnel:
+    build:
+      context: ./tunnel
+      dockerfile: Dockerfile
+    image: d4zum.tunnel
+    container_name: d4zum.tunnel
+    restart: unless-stopped
+    environment:
+      TZ: Asia/Ho_Chi_Minh
+      TARGET_PORT: ${TUNNEL_TARGET_PORT}
+      SUBDOMAIN: ${TUNNEL_SUBDOMAIN}
+    volumes:
+      - ./tunnel/src:/app/src
+    depends_on:
+      - d4zum.nginx
+    network_mode: "host"
+    privileged: true
+
   # # nextjs
   # d4zum.nx:
   #   build:
@@ -104,6 +123,8 @@ services:
       - ./postgres/data:/var/lib/postgresql/data
       # copy the sql script to create tables
       - ./postgres/init/dbinit.sql:/docker-entrypoint-initdb.d/dbinit.sql
+    # ports:
+    #   - ${POSTGRES_PORT}:5432
     networks:
       - internal
     restart: unless-stopped
