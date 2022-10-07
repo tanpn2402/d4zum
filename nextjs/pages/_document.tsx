@@ -16,7 +16,7 @@ class MyDocument extends Document {
           <meta charSet="utf-8" />
           <meta name="keywords" content="d4zum" />
           <meta name="author" content="d4zum" />
-          <link rel="shortcut icon" href="favicon/favicon.ico" />
+          <link rel="shortcut icon" href="/images/fav.ico" />
           <meta name="format-detection" content="telephone=no" />
           {/* Twitter Card Tags */}
           <meta name="twitter:card" content="summary" />
