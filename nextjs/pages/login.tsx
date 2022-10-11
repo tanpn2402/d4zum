@@ -17,7 +17,7 @@ const PageLogin: NextPage = ({
           <div className="tt-loginpages">
             <Link href="/">
               <a className="tt-block-title">
-                <img src="images/logo.png" alt="" />
+                <img src="images/logo.png" alt="" style={{ width: "128px" }} />
                 <div className="tt-title">
                   Welcome to d4z
                 </div>

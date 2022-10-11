@@ -1,0 +1,12 @@
+// $grid-breakpoints come from _variables";
+.hidden {
+
+  @each $name,
+  $px in $grid-breakpoints {
+    &-#{$name} {
+      @media (max-width: $px) {
+        display: none !important;
+      }
+    }
+  }
+}

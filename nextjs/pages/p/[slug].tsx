@@ -79,8 +79,8 @@ const Topic: NextPage = ({
               window.WebSocket = window.WebSocket || window.MozWebSocket
               const _wsUrl = new URL(wsNotification?.url)
               if (window.WebSocket && (
-                (_wsUrl.protocol === "wss" && window.location.protocol === "https") ||
-                (_wsUrl.protocol === "ws" && window.location.protocol === "http"))
+                (_wsUrl.protocol === "wss:" && window.location.protocol === "https:") ||
+                (_wsUrl.protocol === "ws:" && window.location.protocol === "http:"))
               ) {
                 // open connection
                 if (wsConnectionRef.current) {

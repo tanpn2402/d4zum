@@ -14,7 +14,7 @@ const UserMenu = () => {
   if (jwtToken) {
     const jwtData: IJwtAuthenticateData = jwtDecode(jwtToken.toString())
     return <>
-      <div className="tt-desktop-menu">
+      <div className="tt-desktop-menu ">
         <nav>
           <ul>
             <li>
@@ -25,7 +25,7 @@ const UserMenu = () => {
                     <div className="tt-avatar-icon tt-size-md">
                       <i className="tt-icon"><svg><use xlinkHref={"#icon-ava-" + jwtData.name?.trim?.()?.charAt?.(0)?.toLowerCase?.()} /></svg></i>
                     </div>
-                    <div className="tt-username d-flex align-items-center ms-2">{jwtData.name}</div>
+                    <div className="tt-username d-flex align-items-center ms-2 hidden-md">{jwtData.name}</div>
                   </a>
                 </Link>
               </div>
@@ -102,8 +102,8 @@ const UserNotification = () => {
     const _wsUrl = new URL(wsUrl)
 
     if (window.WebSocket && (
-      (_wsUrl.protocol === "wss" && window.location.protocol === "https") ||
-      (_wsUrl.protocol === "ws" && window.location.protocol === "http"))
+      (_wsUrl.protocol === "wss:" && window.location.protocol === "https:") ||
+      (_wsUrl.protocol === "ws:" && window.location.protocol === "http:"))
     ) {
       // open connection
       var connection = new WebSocket(wsUrl + `?type=${EWSNotiType.NOTIFICATION.toString()}`);

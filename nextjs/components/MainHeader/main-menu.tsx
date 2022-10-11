@@ -17,7 +17,7 @@ const MainMenu = () => {
     onLoad($)
   }, [])
 
-  return <div className="tt-desktop-menu">
+  return <div className="tt-desktop-menu hidden-lg">
     <nav>
       <ul>
         <li>
