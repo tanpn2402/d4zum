@@ -141,6 +141,34 @@
 			border-left: 5px solid rgb(204, 204, 204);
 		}
 
+		.table {
+			display: table;
+			margin: 0.9em auto;
+
+			table {
+				overflow: hidden;
+				table-layout: fixed;
+				border: 1px double #b3b3b3;
+				border-collapse: collapse;
+				border-spacing: 0;
+				height: 100%;
+				width: 100%;
+
+				th,
+				td {
+					position: relative;
+					border: 1px solid #bfbfbf;
+					min-width: 2em;
+					padding: 0.4em;
+				}
+
+				th {
+					background: rgba(0, 0, 0, .05);
+					font-weight: 700;
+				}
+			}
+		}
+
 		.tt-title {
 			font-size: 16px;
 			line-height: 26px;
