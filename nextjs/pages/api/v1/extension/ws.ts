@@ -80,19 +80,27 @@ class WebsocketApiHandler extends BaseApiHandler<IWSData> {
         wsTypes.push(type as EWSNotiType)
       })
     }
+
+
+    let jwtData = {} as IJwtAuthenticateData, jwtToken = getCookie("jwt", { req: this.req, res: this.res })?.toString()
+    if (jwtToken) {
+      jwtData = jwtDecode(jwtToken.toString())
+    }
+
     if (wsTypes.length === 0 || (wsTypes.includes(EWSNotiType.POST) && url)) {
       if (url.toString().trim().indexOf("/p/") === 0) {
         // post
-        const posts = await get({ slug: url.toString().replace("/p/", "") })
+        const posts = await get({
+          slug: url.toString().replace("/p/", ""),
+          groupIds: jwtData?.groups?.map?.(group => group.id)
+        })
         if (posts && posts.length) {
           promises.push(pubsub(posts[0].user, EWSNotiType.POST))
         }
       }
     }
 
-    const jwtToken = getCookie("jwt", { req: this.req, res: this.res })?.toString()
-    if (wsTypes.length === 0 || (wsTypes.includes(EWSNotiType.NOTIFICATION) && WsManager.getWs() && jwtToken)) {
-      const jwtData: IJwtAuthenticateData = jwtDecode(jwtToken.toString())
+    if (wsTypes.length === 0 || (wsTypes.includes(EWSNotiType.NOTIFICATION) && WsManager.getWs() && jwtData?.id)) {
       // @ts-ignore ignore-missing-not-optional-properties
       const user: IUser = {
         email: jwtData.email,
