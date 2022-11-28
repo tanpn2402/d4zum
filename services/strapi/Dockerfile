@@ -8,5 +8,7 @@ COPY ["./package.json", "/app"]
 
 RUN npm install
 
-CMD [ "npm", "run", "develop" ]
+RUN ["npm", "run", "build"]
+
+CMD [ "npm", "run", "start" ]
 # CMD [ "/bin/ls", "-l" ]

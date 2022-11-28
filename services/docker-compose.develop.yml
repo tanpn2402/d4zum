@@ -25,7 +25,8 @@ services:
     ports:
       - ${NGINX_PORT}:3666
     volumes:
-      - ./nginx/log/:/var/log/nginx/
+      - ./nginx/conf:/etc/nginx/conf.d:ro
+      - ./nginx/log/:/var/log/nginx/:rw
 
   # strapi
   d4zum.strapi:
@@ -40,17 +41,17 @@ services:
     ports:
       - ${STRAPI_PORT}:1337
     volumes:
-      - ./strapi/.cache:/app/.cache
-      - ./strapi/build:/app/build
+      # - ./strapi/.cache:/app/.cache
+      # - ./strapi/build:/app/build
       - ./strapi/config:/app/config
       - ./strapi/database:/app/database
       - ./strapi/public:/app/public
       - ./strapi/src:/app/src
-      - ./strapi/.editorconfig:/app/.editorconfig
+      # - ./strapi/.editorconfig:/app/.editorconfig
       - ./strapi/.env:/app/.env
-      - ./strapi/.eslintignore:/app/.eslintignore
-      - ./strapi/.eslintrc:/app/.eslintrc
-      - ./strapi/.strapi-updater.json:/app/.strapi-updater.json
+      # - ./strapi/.eslintignore:/app/.eslintignore
+      # - ./strapi/.eslintrc:/app/.eslintrc
+      # - ./strapi/.strapi-updater.json:/app/.strapi-updater.json
       - ./strapi/favicon.ico:/app/favicon.ico
     depends_on:
       - d4zum.postgres
